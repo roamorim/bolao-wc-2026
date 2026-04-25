@@ -50,7 +50,7 @@
         </div>
 
         <!-- Tabs de grupo A–L -->
-        <div x-show="mode==='grupo'" x-cloak class="d-flex flex-wrap gap-1">
+        <div style="display:none" :style="{ display: mode==='grupo' ? 'flex' : 'none' }" class="flex-wrap gap-1">
             <button type="button" class="btn btn-sm" @click="grupo='A'" :class="grupo==='A'?'btn-success':'btn-outline-success'">A</button>
             <button type="button" class="btn btn-sm" @click="grupo='B'" :class="grupo==='B'?'btn-success':'btn-outline-success'">B</button>
             <button type="button" class="btn btn-sm" @click="grupo='C'" :class="grupo==='C'?'btn-success':'btn-outline-success'">C</button>
@@ -66,7 +66,7 @@
         </div>
 
         <!-- Filtro por data -->
-        <select x-show="mode==='data'" x-cloak x-model="data"
+        <select style="display:none" x-show="mode==='data'" x-model="data"
                 class="form-select form-select-sm w-auto">
             <option value="">Todos os dias</option>
             <option th:each="d : ${distinctDates}"
@@ -76,8 +76,8 @@
         </select>
 
         <!-- Filtro por equipe -->
-        <select x-show="mode==='equipe'" x-cloak x-model="equipe"
-                class="form-select form-select-sm w-auto" style="max-width:220px">
+        <select style="display:none; max-width:220px" x-show="mode==='equipe'" x-model="equipe"
+                class="form-select form-select-sm w-auto">
             <option value="">Todas as equipes</option>
             <optgroup th:each="entry : ${teamsByGroup}"
                       th:label="'Grupo ' + ${entry.key}">
