@@ -1,0 +1,11 @@
+package br.com.bolao.domain.repository;
+
+import br.com.bolao.domain.model.TopScorerPrediction;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface TopScorerPredictionRepository extends JpaRepository<TopScorerPrediction, Long> {
+
+    Optional<TopScorerPrediction> findByUserId(Long userId);
+}

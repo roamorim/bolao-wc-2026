@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Jogos')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<div class="container py-4">
+    <h4 class="fw-bold mb-4"><i class="bi bi-calendar3"></i> Calendário de Jogos</h4>
+
+    <div th:each="stageEntry : ${matchesByStage}">
+        <h6 class="text-uppercase text-muted fw-bold mt-4 mb-2" th:text="${stageEntry.key}">Fase</h6>
+        <div class="card mb-3">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Jogo</th>
+                            <th>Data/Hora (UTC)</th>
+                            <th class="d-none d-md-table-cell">Estádio</th>
+                            <th class="text-center">Minha Aposta</th>
+                            <th class="text-center">Resultado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="match : ${stageEntry.value}">
+                        <td class="text-muted small" th:text="${match.matchNumber}">1</td>
+                        <td>
+                            <span th:text="${match.homeTeam?.name}">Casa</span>
+                            <span class="text-muted mx-1">x</span>
+                            <span th:text="${match.awayTeam?.name}">Fora</span>
+                        </td>
+                        <td class="small" th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">-</td>
+                        <td class="small text-muted d-none d-md-table-cell" th:text="${match.venue}">-</td>
+                        <td class="text-center">
+                            <span th:if="${predictionsByMatchId[match.id] != null}" class="badge bg-primary">
+                                <span th:text="${predictionsByMatchId[match.id].homeScorePred}">0</span>
+                                x
+                                <span th:text="${predictionsByMatchId[match.id].awayScorePred}">0</span>
+                            </span>
+                            <span th:unless="${predictionsByMatchId[match.id] != null}" class="text-muted small">—</span>
+                        </td>
+                        <td class="text-center">
+                            <span th:if="${match.finished}" class="fw-bold">
+                                <span th:text="${match.homeScore}">0</span>
+                                x
+                                <span th:text="${match.awayScore}">0</span>
+                            </span>
+                            <span th:unless="${match.finished}" class="text-muted">—</span>
+                        </td>
+                        <td>
+                            <a th:if="${match.open}" th:href="@{/matches/{id}(id=${match.id})}"
+                               class="btn btn-sm btn-success">Apostar</a>
+                            <a th:unless="${match.open}" th:href="@{/matches/{id}(id=${match.id})}"
+                               class="btn btn-sm btn-outline-secondary">Ver</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

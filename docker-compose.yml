@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bolao-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bolao}
+      POSTGRES_USER: ${DB_USERNAME:-bolao}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bolao}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-bolao}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: bolao-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-bolao}
+      DB_USERNAME: ${DB_USERNAME:-bolao}
+      DB_PASSWORD: ${DB_PASSWORD:-bolao}
+      PORT: 8080
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

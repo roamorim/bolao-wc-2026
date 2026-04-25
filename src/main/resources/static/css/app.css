@@ -1,0 +1,39 @@
+/* Bolão Copa 2026 — custom styles */
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.navbar-brand {
+    letter-spacing: -0.5px;
+}
+
+.card {
+    border: 1px solid rgba(0,0,0,.09);
+    border-radius: 0.75rem;
+}
+
+.table td, .table th {
+    padding: 0.65rem 0.75rem;
+    vertical-align: middle;
+}
+
+/* Highlight logged-in user's row in leaderboard */
+.leaderboard-me {
+    background-color: #d1f0da !important;
+    font-weight: 600;
+}
+
+/* Prediction score input */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* Responsive table text */
+@media (max-width: 576px) {
+    .table td, .table th {
+        font-size: 0.85rem;
+    }
+}

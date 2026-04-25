@@ -1,0 +1,12 @@
+target/
+*.class
+*.jar
+.env
+.DS_Store
+*.iml
+.idea/
+.vscode/
+*.log
+
+# Maven Wrapper jar (baixado automaticamente, não precisa commitar)
+.mvn/wrapper/maven-wrapper.jar

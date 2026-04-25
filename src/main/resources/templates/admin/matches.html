@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Admin - Jogos')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0"><i class="bi bi-gear"></i> Gerenciar Jogos</h4>
+        <div>
+            <a th:href="@{/admin/users}" class="btn btn-outline-secondary btn-sm me-2">Usuários</a>
+            <a th:href="@{/admin/scoring}" class="btn btn-outline-secondary btn-sm">Pontuação</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Jogo</th>
+                        <th>Data (UTC)</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Resultado Oficial</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr th:each="match : ${matches}">
+                    <td class="text-muted small" th:text="${match.matchNumber}">1</td>
+                    <td>
+                        <span th:text="${match.homeTeam?.name}">Casa</span>
+                        <span class="text-muted">x</span>
+                        <span th:text="${match.awayTeam?.name}">Fora</span>
+                        <small class="text-muted d-block" th:text="${match.stage.name}"></small>
+                    </td>
+                    <td class="small" th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">-</td>
+                    <td class="text-center">
+                        <span th:switch="${match.status.name()}">
+                            <span th:case="'SCHEDULED'" class="badge bg-success">Agendado</span>
+                            <span th:case="'LOCKED'"    class="badge bg-warning text-dark">Bloqueado</span>
+                            <span th:case="'FINISHED'"  class="badge bg-secondary">Encerrado</span>
+                        </span>
+                    </td>
+                    <td class="text-center fw-bold">
+                        <span th:if="${match.finished}"
+                              th:text="${match.homeScore} + ' x ' + ${match.awayScore}">- x -</span>
+                        <span th:unless="${match.finished}" class="text-muted">—</span>
+                    </td>
+                    <td>
+                        <!-- Lock button -->
+                        <form th:if="${match.status.name() == 'SCHEDULED'}"
+                              th:action="@{/admin/matches/{id}/lock(id=${match.id})}"
+                              method="post" class="d-inline">
+                            <button class="btn btn-sm btn-warning" type="submit"
+                                    onclick="return confirm('Encerrar apostas para este jogo?')">
+                                <i class="bi bi-lock"></i>
+                            </button>
+                        </form>
+
+                        <!-- Result form -->
+                        <button th:unless="${match.finished}"
+                                class="btn btn-sm btn-success"
+                                data-bs-toggle="modal"
+                                th:data-bs-target="${'#resultModal-' + match.id}">
+                            <i class="bi bi-check-circle"></i> Resultado
+                        </button>
+
+                        <!-- Result Modal -->
+                        <div th:unless="${match.finished}"
+                             class="modal fade"
+                             th:id="${'resultModal-' + match.id}"
+                             tabindex="-1">
+                            <div class="modal-dialog modal-sm">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h6 class="modal-title">
+                                            Resultado:
+                                            <span th:text="${match.homeTeam?.name}"></span>
+                                            x
+                                            <span th:text="${match.awayTeam?.name}"></span>
+                                        </h6>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form th:action="@{/admin/matches/{id}/result(id=${match.id})}" method="post">
+                                        <div class="modal-body">
+                                            <div class="d-flex align-items-center gap-2 justify-content-center">
+                                                <div class="text-center">
+                                                    <label class="form-label small" th:text="${match.homeTeam?.name}"></label>
+                                                    <input type="number" name="homeScore"
+                                                           class="form-control form-control-lg text-center"
+                                                           style="width:70px" min="0" max="20" value="0" required/>
+                                                </div>
+                                                <span class="fw-bold mt-3">x</span>
+                                                <div class="text-center">
+                                                    <label class="form-label small" th:text="${match.awayTeam?.name}"></label>
+                                                    <input type="number" name="awayScore"
+                                                           class="form-control form-control-lg text-center"
+                                                           style="width:70px" min="0" max="20" value="0" required/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-success btn-sm">Confirmar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

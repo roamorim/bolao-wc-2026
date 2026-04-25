@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<tbody id="leaderboard-body" th:fragment="leaderboardTable">
+    <tr th:each="entry, stat : ${entries}"
+        th:classappend="${stat.index == 0} ? 'table-warning fw-bold' : (${stat.index == 1} ? 'table-light' : '')">
+        <td class="text-center">
+            <span th:if="${stat.index == 0}">🥇</span>
+            <span th:if="${stat.index == 1}">🥈</span>
+            <span th:if="${stat.index == 2}">🥉</span>
+            <span th:if="${stat.index > 2}" th:text="${stat.count}"></span>
+        </td>
+        <td th:text="${entry.displayName}">Nome</td>
+        <td class="text-center fw-bold text-success" th:text="${entry.totalPoints}">0</td>
+        <td class="text-center text-muted" th:text="${entry.matchPoints}">0</td>
+        <td class="text-center text-muted" th:text="${entry.groupPoints}">0</td>
+        <td class="text-center text-muted" th:text="${entry.semifinalistsPoints}">0</td>
+        <td class="text-center text-muted" th:text="${entry.topScorerPoints}">0</td>
+    </tr>
+</tbody>
+</body>
+</html>
