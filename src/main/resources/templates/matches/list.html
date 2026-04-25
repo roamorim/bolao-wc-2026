@@ -6,62 +6,135 @@
 <nav th:replace="~{fragments/layout :: navbar}"></nav>
 <div th:replace="~{fragments/layout :: alerts}"></div>
 
-<div class="container py-4">
-    <h4 class="fw-bold mb-4"><i class="bi bi-calendar3"></i> Calendário de Jogos</h4>
+<div class="container-fluid py-3 px-2 px-md-4"
+     x-data="{
+       mode: 'fase',
+       grupo: 'A',
+       data: '',
+       equipe: '',
+       dirty: [],
+       markDirty(id) {
+         if (!this.dirty.includes(id)) this.dirty.push(id);
+       },
+       saveAll() {
+         this.dirty.forEach(id => {
+           const form = document.getElementById('form-' + id);
+           if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+         });
+         this.dirty = [];
+       },
+       visible(el) {
+         if (this.mode === 'grupo')  return el.dataset.group === this.grupo;
+         if (this.mode === 'data')   return !this.data   || el.dataset.date  === this.data;
+         if (this.mode === 'equipe') return !this.equipe || el.dataset.teams.split(',').includes(this.equipe);
+         return true;
+       }
+     }">
 
-    <div th:each="stageEntry : ${matchesByStage}">
-        <h6 class="text-uppercase text-muted fw-bold mt-4 mb-2" th:text="${stageEntry.key}">Fase</h6>
-        <div class="card mb-3">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Jogo</th>
-                            <th>Data/Hora (UTC)</th>
-                            <th class="d-none d-md-table-cell">Estádio</th>
-                            <th class="text-center">Minha Aposta</th>
-                            <th class="text-center">Resultado</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="match : ${stageEntry.value}">
-                        <td class="text-muted small" th:text="${match.matchNumber}">1</td>
-                        <td>
-                            <span th:text="${match.homeTeam?.name}">Casa</span>
-                            <span class="text-muted mx-1">x</span>
-                            <span th:text="${match.awayTeam?.name}">Fora</span>
-                        </td>
-                        <td class="small" th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">-</td>
-                        <td class="small text-muted d-none d-md-table-cell" th:text="${match.venue}">-</td>
-                        <td class="text-center">
-                            <span th:if="${predictionsByMatchId[match.id] != null}" class="badge bg-primary">
-                                <span th:text="${predictionsByMatchId[match.id].homeScorePred}">0</span>
-                                x
-                                <span th:text="${predictionsByMatchId[match.id].awayScorePred}">0</span>
-                            </span>
-                            <span th:unless="${predictionsByMatchId[match.id] != null}" class="text-muted small">—</span>
-                        </td>
-                        <td class="text-center">
-                            <span th:if="${match.finished}" class="fw-bold">
-                                <span th:text="${match.homeScore}">0</span>
-                                x
-                                <span th:text="${match.awayScore}">0</span>
-                            </span>
-                            <span th:unless="${match.finished}" class="text-muted">—</span>
-                        </td>
-                        <td>
-                            <a th:if="${match.open}" th:href="@{/matches/{id}(id=${match.id})}"
-                               class="btn btn-sm btn-success">Apostar</a>
-                            <a th:unless="${match.open}" th:href="@{/matches/{id}(id=${match.id})}"
-                               class="btn btn-sm btn-outline-secondary">Ver</a>
+    <!-- ── Barra de filtros ──────────────────────────────────────────── -->
+    <div class="d-flex flex-wrap align-items-start gap-2 mb-3">
+
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn"
+                    :class="mode==='fase'   ? 'btn-success' : 'btn-outline-secondary'"
+                    @click="mode='fase'">Por Fase</button>
+            <button type="button" class="btn"
+                    :class="mode==='grupo'  ? 'btn-success' : 'btn-outline-secondary'"
+                    @click="mode='grupo'">Por Grupo</button>
+            <button type="button" class="btn"
+                    :class="mode==='data'   ? 'btn-success' : 'btn-outline-secondary'"
+                    @click="mode='data'">Por Data</button>
+            <button type="button" class="btn"
+                    :class="mode==='equipe' ? 'btn-success' : 'btn-outline-secondary'"
+                    @click="mode='equipe'">Por Equipe</button>
+        </div>
+
+        <!-- Tabs de grupo A–L -->
+        <div x-show="mode==='grupo'" x-cloak class="d-flex flex-wrap gap-1">
+            <button type="button" class="btn btn-sm" @click="grupo='A'" :class="grupo==='A'?'btn-success':'btn-outline-success'">A</button>
+            <button type="button" class="btn btn-sm" @click="grupo='B'" :class="grupo==='B'?'btn-success':'btn-outline-success'">B</button>
+            <button type="button" class="btn btn-sm" @click="grupo='C'" :class="grupo==='C'?'btn-success':'btn-outline-success'">C</button>
+            <button type="button" class="btn btn-sm" @click="grupo='D'" :class="grupo==='D'?'btn-success':'btn-outline-success'">D</button>
+            <button type="button" class="btn btn-sm" @click="grupo='E'" :class="grupo==='E'?'btn-success':'btn-outline-success'">E</button>
+            <button type="button" class="btn btn-sm" @click="grupo='F'" :class="grupo==='F'?'btn-success':'btn-outline-success'">F</button>
+            <button type="button" class="btn btn-sm" @click="grupo='G'" :class="grupo==='G'?'btn-success':'btn-outline-success'">G</button>
+            <button type="button" class="btn btn-sm" @click="grupo='H'" :class="grupo==='H'?'btn-success':'btn-outline-success'">H</button>
+            <button type="button" class="btn btn-sm" @click="grupo='I'" :class="grupo==='I'?'btn-success':'btn-outline-success'">I</button>
+            <button type="button" class="btn btn-sm" @click="grupo='J'" :class="grupo==='J'?'btn-success':'btn-outline-success'">J</button>
+            <button type="button" class="btn btn-sm" @click="grupo='K'" :class="grupo==='K'?'btn-success':'btn-outline-success'">K</button>
+            <button type="button" class="btn btn-sm" @click="grupo='L'" :class="grupo==='L'?'btn-success':'btn-outline-success'">L</button>
+        </div>
+
+        <!-- Filtro por data -->
+        <select x-show="mode==='data'" x-cloak x-model="data"
+                class="form-select form-select-sm w-auto">
+            <option value="">Todos os dias</option>
+            <option th:each="d : ${distinctDates}"
+                    th:value="${d}"
+                    th:text="${d.substring(8,10) + '/' + d.substring(5,7) + '/' + d.substring(0,4)}">
+            </option>
+        </select>
+
+        <!-- Filtro por equipe -->
+        <select x-show="mode==='equipe'" x-cloak x-model="equipe"
+                class="form-select form-select-sm w-auto" style="max-width:220px">
+            <option value="">Todas as equipes</option>
+            <optgroup th:each="entry : ${teamsByGroup}"
+                      th:label="'Grupo ' + ${entry.key}">
+                <option th:each="team : ${entry.value}"
+                        th:value="${#strings.toLowerCase(team.code)}"
+                        th:text="${team.name}"></option>
+            </optgroup>
+        </select>
+    </div>
+
+    <!-- ── Tabela de jogos ───────────────────────────────────────────── -->
+    <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="text-muted fw-normal small">#</th>
+                    <th>Casa</th>
+                    <th class="text-center">Sua aposta</th>
+                    <th>Fora</th>
+                    <th class="d-none d-md-table-cell text-muted fw-normal small">Data (UTC)</th>
+                    <th class="text-center text-muted fw-normal small">Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <th:block th:each="entry : ${matchesByStage}">
+
+                    <!-- Header de fase -->
+                    <tr class="table-success" x-show="mode==='fase'">
+                        <td colspan="6" class="fw-bold py-2">
+                            <i class="bi bi-trophy-fill me-1"></i>
+                            <span th:text="${entry.key}">Fase</span>
                         </td>
                     </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
+                    <!-- Uma linha por jogo -->
+                    <th:block th:each="match : ${entry.value}">
+                        <th:block th:with="pred=${predictionsByMatchId[match.id]}">
+                            <tr th:replace="~{matches/match-row :: row}"></tr>
+                        </th:block>
+                    </th:block>
+
+                </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ── Botão global de salvar (aparece quando há palpites alterados) ── -->
+    <div x-show="dirty.length > 0" x-cloak
+         class="position-sticky bottom-0 py-3 text-center"
+         style="background: linear-gradient(transparent, rgba(248,249,250,.95) 30%); pointer-events: none;">
+        <button @click="saveAll()"
+                class="btn btn-success btn-lg shadow-sm px-5"
+                style="pointer-events: auto;">
+            <i class="bi bi-check-all me-1"></i>
+            Salvar palpites
+            <span class="badge bg-white text-success ms-1" x-text="dirty.length"></span>
+        </button>
     </div>
 </div>
 

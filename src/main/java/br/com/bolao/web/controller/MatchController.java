@@ -2,11 +2,14 @@ package br.com.bolao.web.controller;
 
 import br.com.bolao.domain.model.Match;
 import br.com.bolao.domain.model.MatchPrediction;
-import br.com.bolao.domain.repository.MatchRepository;
+import br.com.bolao.domain.model.Team;
 import br.com.bolao.domain.repository.MatchPredictionRepository;
+import br.com.bolao.domain.repository.MatchRepository;
+import br.com.bolao.domain.repository.TeamRepository;
 import br.com.bolao.service.PredictionService;
 import br.com.bolao.service.UserService;
 import br.com.bolao.web.dto.request.MatchPredictionRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,16 +30,19 @@ public class MatchController {
 
     private final MatchRepository matchRepository;
     private final MatchPredictionRepository matchPredictionRepository;
+    private final TeamRepository teamRepository;
     private final PredictionService predictionService;
     private final UserService userService;
 
     public MatchController(
             MatchRepository matchRepository,
             MatchPredictionRepository matchPredictionRepository,
+            TeamRepository teamRepository,
             PredictionService predictionService,
             UserService userService) {
         this.matchRepository = matchRepository;
         this.matchPredictionRepository = matchPredictionRepository;
+        this.teamRepository = teamRepository;
         this.predictionService = predictionService;
         this.userService = userService;
     }
@@ -49,7 +56,6 @@ public class MatchController {
             .findByUserIdWithMatch(user.getId()).stream()
             .collect(Collectors.toMap(p -> p.getMatch().getId(), p -> p));
 
-        // Group matches by stage name preserving order
         var matchesByStage = matches.stream()
             .collect(Collectors.groupingBy(
                 m -> m.getStage().getName(),
@@ -57,8 +63,24 @@ public class MatchController {
                 Collectors.toList()
             ));
 
+        List<Team> teams = teamRepository.findAllByOrderByGroupNameAscNameAsc();
+        var teamsByGroup = teams.stream()
+            .filter(t -> t.getGroupName() != null)
+            .collect(Collectors.groupingBy(
+                Team::getGroupName,
+                java.util.LinkedHashMap::new,
+                Collectors.toList()
+            ));
+
+        List<String> distinctDates = matches.stream()
+            .map(m -> m.getMatchDatetime().atZone(ZoneOffset.UTC).toLocalDate().toString())
+            .distinct()
+            .collect(Collectors.toList());
+
         model.addAttribute("matchesByStage", matchesByStage);
         model.addAttribute("predictionsByMatchId", predictionsByMatchId);
+        model.addAttribute("teamsByGroup", teamsByGroup);
+        model.addAttribute("distinctDates", distinctDates);
         model.addAttribute("user", user);
         return "matches/list";
     }
@@ -91,18 +113,35 @@ public class MatchController {
             @Valid @ModelAttribute("predictionRequest") MatchPredictionRequest request,
             BindingResult bindingResult,
             @AuthenticationPrincipal UserDetails principal,
+            HttpServletRequest httpRequest,
             RedirectAttributes redirectAttributes,
             Model model) {
 
         var user = userService.findByUsername(principal.getUsername());
+        boolean isHtmx = "true".equals(httpRequest.getHeader("HX-Request"));
 
         if (bindingResult.hasErrors()) {
             Match match = matchRepository.findByIdWithTeams(id).orElseThrow();
+            if (isHtmx) {
+                MatchPrediction pred = matchPredictionRepository.findByUserAndMatch(user, match).orElse(null);
+                model.addAttribute("match", match);
+                model.addAttribute("pred", pred);
+                return "matches/match-row :: row";
+            }
             model.addAttribute("match", match);
             return "matches/detail";
         }
 
         predictionService.saveMatchPrediction(user, id, request);
+
+        if (isHtmx) {
+            Match match = matchRepository.findByIdWithTeams(id).orElseThrow();
+            MatchPrediction pred = matchPredictionRepository.findByUserAndMatch(user, match).orElse(null);
+            model.addAttribute("match", match);
+            model.addAttribute("pred", pred);
+            return "matches/match-row :: row";
+        }
+
         redirectAttributes.addFlashAttribute("successMessage", "Aposta registrada com sucesso!");
         return "redirect:/matches/" + id;
     }

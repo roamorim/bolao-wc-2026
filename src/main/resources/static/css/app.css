@@ -25,10 +25,43 @@ body {
     font-weight: 600;
 }
 
-/* Prediction score input */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-    opacity: 1;
+/* Inline score inputs on the matches list */
+.score-input {
+    width: 54px;
+    padding: 0.15rem 0.25rem;
+    text-align: center;
+}
+
+/* Hide Alpine.js elements before initialization */
+[x-cloak] { display: none !important; }
+
+/* Score form states: default = no prediction, prediction-saved = saved, is-dirty = modified */
+.score-form .score-status-saved,
+.score-form .score-status-dirty { display: none; font-size: .75rem; }
+
+.score-form.prediction-saved .score-input { border-color: #198754; }
+.score-form.prediction-saved .score-status-saved { display: inline; }
+
+.score-form.is-dirty .score-input { border-color: #fd7e14; }
+.score-form.is-dirty .score-status-dirty { display: inline; }
+
+/* Flash animation on row after HTMX swap */
+@keyframes flashGreen {
+    0%   { background-color: #d1f0da; }
+    100% { background-color: transparent; }
+}
+.htmx-settling td {
+    animation: flashGreen 1.2s ease;
+}
+
+/* Hide spinners on score inputs — user types the number directly */
+input[type=number].score-input {
+    -moz-appearance: textfield;
+}
+input[type=number].score-input::-webkit-outer-spin-button,
+input[type=number].score-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 /* Responsive table text */

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<tr th:fragment="row"
+    th:id="'match-row-' + ${match.id}"
+    th:attr="data-group=${match.homeTeam.groupName != null ? match.homeTeam.groupName : ''},
+             data-date=${#temporals.format(match.matchDatetime, 'yyyy-MM-dd')},
+             data-teams=${#strings.toLowerCase(match.homeTeam.code) + ',' + #strings.toLowerCase(match.awayTeam.code)}"
+    x-show="mode === 'fase' || visible($el)">
+
+    <!-- Número do jogo -->
+    <td class="text-muted small text-nowrap">
+        #<span th:text="${match.matchNumber}">1</span>
+    </td>
+
+    <!-- Time da casa -->
+    <td>
+        <span class="fw-semibold" th:text="${match.homeTeam?.name}">Casa</span>
+        <span class="d-none d-lg-inline text-muted small ms-1"
+              th:text="'(' + ${match.homeTeam?.code} + ')'"></span>
+    </td>
+
+    <!-- Aposta / Formulário inline -->
+    <td class="text-center py-1">
+
+        <!-- Jogo aberto: inputs de placar (sem botão — salvo pelo botão global) -->
+        <form th:if="${match.open}"
+              th:id="'form-' + ${match.id}"
+              th:action="@{/matches/{id}/predict(id=${match.id})}"
+              method="post"
+              th:attr="hx-post=@{/matches/{id}/predict(id=${match.id})},hx-target='#match-row-' + ${match.id}"
+              hx-swap="outerHTML"
+              class="score-form d-inline-flex align-items-center gap-1"
+              th:classappend="${pred != null ? ' prediction-saved' : ''}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="number" name="homeScore"
+                   th:value="${pred != null ? pred.homeScorePred : ''}"
+                   class="form-control form-control-sm score-input"
+                   th:data-mid="${match.id}"
+                   @focus="setTimeout(() => $el.select())"
+                   @change="markDirty($el.dataset.mid); $el.closest('form').classList.add('is-dirty'); $el.closest('form').classList.remove('prediction-saved')"
+                   min="0" max="20" placeholder="–" required/>
+            <span class="text-muted small">×</span>
+            <input type="number" name="awayScore"
+                   th:value="${pred != null ? pred.awayScorePred : ''}"
+                   class="form-control form-control-sm score-input"
+                   th:data-mid="${match.id}"
+                   @focus="setTimeout(() => $el.select())"
+                   @change="markDirty($el.dataset.mid); $el.closest('form').classList.add('is-dirty'); $el.closest('form').classList.remove('prediction-saved')"
+                   min="0" max="20" placeholder="–" required/>
+            <i class="bi bi-check-circle-fill score-status-saved text-success" title="Salvo"></i>
+            <i class="bi bi-pencil-fill score-status-dirty text-warning" title="Alterado"></i>
+        </form>
+
+        <!-- Aposta registrada (jogo encerrado ou bloqueado) -->
+        <span th:if="${!match.open and pred != null}" class="badge bg-primary px-2 py-1" style="font-size:.85rem">
+            <span th:text="${pred.homeScorePred}">0</span>
+            &nbsp;×&nbsp;
+            <span th:text="${pred.awayScorePred}">0</span>
+        </span>
+
+        <!-- Sem aposta (jogo encerrado/bloqueado sem registro) -->
+        <span th:if="${!match.open and pred == null}" class="text-muted small">—</span>
+    </td>
+
+    <!-- Time de fora -->
+    <td>
+        <span class="fw-semibold" th:text="${match.awayTeam?.name}">Fora</span>
+        <span class="d-none d-lg-inline text-muted small ms-1"
+              th:text="'(' + ${match.awayTeam?.code} + ')'"></span>
+    </td>
+
+    <!-- Data/hora (UTC) -->
+    <td class="d-none d-md-table-cell text-muted small text-nowrap">
+        <span th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">00/00 00:00</span>
+    </td>
+
+    <!-- Resultado oficial + pontos ganhos -->
+    <td class="text-center text-nowrap">
+        <span th:if="${match.finished}" class="badge bg-secondary">
+            <span th:text="${match.homeScore}">0</span>
+            ×
+            <span th:text="${match.awayScore}">0</span>
+        </span>
+        <span th:if="${match.finished and pred != null and pred.pointsEarned != null}"
+              class="ms-1 badge"
+              th:classappend="${pred.pointsEarned > 0 ? 'bg-success' : 'bg-light text-dark border'}"
+              th:text="${pred.pointsEarned} + 'pts'">0pts</span>
+        <span th:unless="${match.finished}"
+              th:if="${!match.open}"
+              class="badge bg-warning text-dark">
+            <i class="bi bi-lock-fill"></i>
+        </span>
+    </td>
+</tr>
+</body>
+</html>

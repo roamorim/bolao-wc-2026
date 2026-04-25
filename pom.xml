@@ -90,6 +90,14 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Dev: auto-restart ao salvar .java, LiveReload para browser -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
