@@ -76,9 +76,11 @@
               th:text="'(' + ${match.awayTeam?.code} + ')'"></span>
     </td>
 
-    <!-- Data/hora (UTC) -->
+    <!-- Data/hora (timezone local do usuário) -->
     <td class="d-none d-md-table-cell text-muted small text-nowrap">
-        <span th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">00/00 00:00</span>
+        <span class="local-time"
+              th:data-ms="${match.matchDatetime.toEpochMilli()}"
+              th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">00/00 00:00</span>
     </td>
 
     <!-- Resultado oficial + pontos ganhos -->

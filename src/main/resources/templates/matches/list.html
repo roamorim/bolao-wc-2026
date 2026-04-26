@@ -97,7 +97,7 @@
                     <th>Casa</th>
                     <th class="text-center">Sua aposta</th>
                     <th>Fora</th>
-                    <th class="d-none d-md-table-cell text-muted fw-normal small">Data (UTC)</th>
+                    <th class="d-none d-md-table-cell text-muted fw-normal small">Data/hora</th>
                     <th class="text-center text-muted fw-normal small">Resultado</th>
                 </tr>
             </thead>
@@ -139,5 +139,17 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function localizeTimes(root) {
+    const p = n => String(n).padStart(2, '0');
+    (root || document).querySelectorAll('.local-time[data-ms]').forEach(el => {
+        const d = new Date(+el.dataset.ms);
+        if (isNaN(d.getTime())) return;
+        el.textContent = p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    });
+}
+localizeTimes();
+document.addEventListener('htmx:afterSwap', e => localizeTimes(e.detail.elt.parentElement));
+</script>
 </body>
 </html>
