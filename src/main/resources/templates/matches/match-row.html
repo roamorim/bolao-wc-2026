@@ -14,10 +14,13 @@
     </td>
 
     <!-- Time da casa -->
-    <td>
+    <td class="text-end">
         <span class="fw-semibold" th:text="${match.homeTeam?.name}">Casa</span>
         <span class="d-none d-lg-inline text-muted small ms-1"
               th:text="'(' + ${match.homeTeam?.code} + ')'"></span>
+        <span th:if="${match.homeTeam?.flagCode != null}"
+              th:class="'fi fi-' + ${match.homeTeam.flagCode} + ' ms-1'"
+              style="font-size:1.1rem; vertical-align:middle"></span>
     </td>
 
     <!-- Aposta / Formulário inline -->
@@ -65,6 +68,9 @@
 
     <!-- Time de fora -->
     <td>
+        <span th:if="${match.awayTeam?.flagCode != null}"
+              th:class="'fi fi-' + ${match.awayTeam.flagCode} + ' me-1'"
+              style="font-size:1.1rem; vertical-align:middle"></span>
         <span class="fw-semibold" th:text="${match.awayTeam?.name}">Fora</span>
         <span class="d-none d-lg-inline text-muted small ms-1"
               th:text="'(' + ${match.awayTeam?.code} + ')'"></span>

@@ -25,4 +25,7 @@ public class Team {
 
     @Column(name = "flag_url", length = 500)
     private String flagUrl;
+
+    @Column(name = "flag_code", length = 10)
+    private String flagCode;
 }
