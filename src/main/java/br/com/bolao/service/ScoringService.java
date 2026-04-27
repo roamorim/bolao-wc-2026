@@ -48,17 +48,33 @@ public class ScoringService {
     }
 
     @Transactional
-    public void calculateGroupClassification(String groupName, Long firstPlaceTeamId, Long secondPlaceTeamId) {
-        int pointsPerTeam = loadConfig().get(ScoringKey.GROUP_CLASSIFICATION_CORRECT_PER_TEAM);
+    public void calculateGroupClassification(String groupName,
+            Long firstTeamId, Long secondTeamId, Long thirdTeamId, boolean thirdQualifies) {
+        Map<ScoringKey, Integer> cfg = loadConfig();
+        int correctPos = cfg.get(ScoringKey.GROUP_CLASSIFICATION_CORRECT_POSITION);
+        int wrongPos   = cfg.get(ScoringKey.GROUP_CLASSIFICATION_WRONG_POSITION);
+        int thirdPts   = cfg.get(ScoringKey.GROUP_THIRD_QUALIFIES);
 
-        List<GroupClassificationPrediction> predictions =
-            groupClassificationPredictionRepository.findByGroupName(groupName);
+        groupClassificationPredictionRepository.findByGroupName(groupName).forEach(p -> {
+            int pts = 0;
 
-        predictions.forEach(p -> {
-            int points = 0;
-            if (p.getFirstPlaceTeam().getId().equals(firstPlaceTeamId)) points += pointsPerTeam;
-            if (p.getSecondPlaceTeam().getId().equals(secondPlaceTeamId)) points += pointsPerTeam;
-            p.setPointsEarned(points);
+            Long predFirst  = p.getFirstPlaceTeam().getId();
+            Long predSecond = p.getSecondPlaceTeam().getId();
+
+            if (predFirst.equals(firstTeamId))       pts += correctPos;
+            else if (predFirst.equals(secondTeamId)) pts += wrongPos;
+
+            if (predSecond.equals(secondTeamId))     pts += correctPos;
+            else if (predSecond.equals(firstTeamId)) pts += wrongPos;
+
+            if (thirdQualifies
+                    && p.isThirdQualifies()
+                    && p.getThirdPlaceTeam() != null
+                    && p.getThirdPlaceTeam().getId().equals(thirdTeamId)) {
+                pts += thirdPts;
+            }
+
+            p.setPointsEarned(pts);
         });
     }
 

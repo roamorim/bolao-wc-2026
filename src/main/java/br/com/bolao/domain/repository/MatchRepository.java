@@ -21,6 +21,8 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     @Query("SELECT m FROM Match m JOIN FETCH m.stage JOIN FETCH m.homeTeam JOIN FETCH m.awayTeam WHERE m.stage.code = :stageCode ORDER BY m.matchNumber ASC")
     List<Match> findByStageCode(@Param("stageCode") String stageCode);
 
+    Optional<Match> findByMatchNumber(int matchNumber);
+
     List<Match> findByStatusAndPredictionDeadlineBefore(MatchStatus status, Instant deadline);
 
     @Query("SELECT m FROM Match m JOIN FETCH m.stage JOIN FETCH m.homeTeam JOIN FETCH m.awayTeam WHERE m.matchDatetime BETWEEN :from AND :to ORDER BY m.matchDatetime ASC")

@@ -61,17 +61,25 @@ public class PredictionService {
 
     @Transactional
     public GroupClassificationPrediction saveGroupClassification(
-            User user, String groupName, Long firstTeamId, Long secondTeamId, Instant deadline) {
+            User user, String groupName,
+            Long firstTeamId, Long secondTeamId, Long thirdTeamId, boolean thirdQualifies,
+            Instant deadline) {
 
         if (Instant.now().isAfter(deadline)) {
             throw new PredictionClosedException("Prazo para apostas de classificação do grupo " + groupName + " encerrado.");
         }
-        if (firstTeamId.equals(secondTeamId)) {
-            throw new IllegalArgumentException("1º e 2º lugar devem ser seleções diferentes.");
+
+        long distinctCount = java.util.stream.Stream.of(firstTeamId, secondTeamId, thirdTeamId)
+            .filter(java.util.Objects::nonNull).distinct().count();
+        long nonNullCount  = java.util.stream.Stream.of(firstTeamId, secondTeamId, thirdTeamId)
+            .filter(java.util.Objects::nonNull).count();
+        if (distinctCount < nonNullCount) {
+            throw new IllegalArgumentException("1º, 2º e 3º lugar devem ser seleções diferentes.");
         }
 
         Team first  = teamRepository.findById(firstTeamId).orElseThrow();
         Team second = teamRepository.findById(secondTeamId).orElseThrow();
+        Team third  = thirdTeamId != null ? teamRepository.findById(thirdTeamId).orElseThrow() : null;
 
         GroupClassificationPrediction prediction = groupClassificationPredictionRepository
             .findByUserIdAndGroupName(user.getId(), groupName)
@@ -85,6 +93,8 @@ public class PredictionService {
 
         prediction.setFirstPlaceTeam(first);
         prediction.setSecondPlaceTeam(second);
+        prediction.setThirdPlaceTeam(third);
+        prediction.setThirdQualifies(thirdQualifies);
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
 

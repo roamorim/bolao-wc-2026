@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Resultados dos Grupos')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<div class="container py-4">
+    <div class="d-flex align-items-baseline gap-3 mb-4">
+        <h4 class="mb-0">Resultados Oficiais — Fase de Grupos</h4>
+        <a th:href="@{/admin/matches}" class="text-muted small">← Admin</a>
+    </div>
+
+    <p class="text-muted small mb-4">
+        Preencha o 1º, 2º e 3º lugar de cada grupo após o encerramento das partidas.
+        Ao salvar, os pontos das apostas de classificação daquele grupo são calculados automaticamente.
+    </p>
+
+    <div class="row g-3">
+        <th:block th:each="g : ${groups}">
+            <div class="col-12 col-md-6 col-xl-4"
+                 th:with="result=${resultsByGroup[g]}, teams=${teamsByGroup[g]}">
+
+                <div class="card h-100" th:classappend="${result != null ? ' border-success' : ''}">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2"
+                         th:classappend="${result != null ? ' bg-success text-white' : ' bg-light'}">
+                        <span class="fw-bold">Grupo <span th:text="${g}"></span></span>
+                        <span th:if="${result != null}" class="badge bg-white text-success">
+                            <i class="bi bi-check-circle-fill"></i> Registrado
+                        </span>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <form th:action="@{/admin/special-results/group/{g}(g=${g})}"
+                              method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                            <th:block th:each="pos,iter : ${ {'1º lugar','2º lugar','3º lugar'} }">
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1 text-muted" th:text="${pos}"></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <select th:name="${iter.index == 0 ? 'firstTeamId' : iter.index == 1 ? 'secondTeamId' : 'thirdTeamId'}"
+                                                class="form-select form-select-sm" required>
+                                            <option value="">Selecione...</option>
+                                            <th:block th:each="team : ${teams}">
+                                                <option th:value="${team.id}"
+                                                        th:text="${team.name}"
+                                                        th:selected="${
+                                                            (iter.index == 0 and result != null and result.firstTeam?.id == team.id) or
+                                                            (iter.index == 1 and result != null and result.secondTeam?.id == team.id) or
+                                                            (iter.index == 2 and result != null and result.thirdTeam?.id == team.id)
+                                                        }"></option>
+                                            </th:block>
+                                        </select>
+                                        <div th:if="${iter.index == 2}"
+                                             class="form-check form-switch mb-0 ms-1"
+                                             title="O 3º avança como melhor terceiro?">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="thirdQualifies" value="true"
+                                                   th:checked="${result != null and result.thirdQualifies}"
+                                                   th:id="'adminThirdQualifies-' + ${g}"/>
+                                            <label class="form-check-label small text-nowrap"
+                                                   th:for="'adminThirdQualifies-' + ${g}">Avança</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th:block>
+
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="bi bi-floppy me-1"></i>
+                                    Salvar + Pontuar Grupo <span th:text="${g}"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div th:if="${result != null}" class="card-footer py-1 text-muted small">
+                        Registrado em
+                        <span th:text="${#temporals.format(result.recordedAt, 'dd/MM HH:mm')} + ' UTC'"></span>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

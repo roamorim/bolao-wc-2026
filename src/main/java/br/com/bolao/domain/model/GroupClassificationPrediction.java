@@ -31,6 +31,13 @@ public class GroupClassificationPrediction {
     @JoinColumn(name = "second_place_team_id")
     private Team secondPlaceTeam;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "third_place_team_id")
+    private Team thirdPlaceTeam;
+
+    @Column(name = "third_qualifies", nullable = false)
+    private boolean thirdQualifies = false;
+
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt = Instant.now();
 

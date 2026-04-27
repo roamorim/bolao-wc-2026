@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Apostas Especiais')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<div class="container py-4">
+
+    <div class="d-flex align-items-baseline gap-3 mb-1">
+        <h4 class="mb-0">Apostas Especiais — Classificação</h4>
+        <span class="text-muted small">Fase de Grupos</span>
+    </div>
+
+    <!-- Deadline e contador de terceiros -->
+    <div class="mb-4">
+        <span th:if="${!deadlinePassed}" class="badge bg-success fs-6">
+            <i class="bi bi-clock me-1"></i>
+            Encerra em
+            <span class="local-time"
+                  th:data-ms="${deadline.toEpochMilli()}"
+                  th:text="${#temporals.format(deadline, 'dd/MM HH:mm')}"></span>
+        </span>
+        <span th:if="${deadlinePassed}" class="badge bg-secondary fs-6">
+            <i class="bi bi-lock-fill me-1"></i> Apostas encerradas
+        </span>
+        <span class="ms-3 text-muted small" id="third-counter">
+            <i class="bi bi-info-circle"></i>
+            Terceiros que avançam: <strong th:text="${thirdQualifiesCount}">0</strong>/8
+            <span th:if="${thirdQualifiesCount != 8}" class="text-warning ms-1">
+                <i class="bi bi-exclamation-triangle-fill"></i> Marque exatamente 8
+            </span>
+            <span th:if="${thirdQualifiesCount == 8}" class="text-success ms-1">
+                <i class="bi bi-check-circle-fill"></i>
+            </span>
+        </span>
+    </div>
+
+    <!-- Legenda de pontuação -->
+    <div class="alert alert-light border small mb-4">
+        <strong>Pontuação por grupo:</strong>
+        Posição correta <span class="badge bg-success">+5 pts</span>
+        &nbsp; Posição errada (classificado na outra posição) <span class="badge bg-warning text-dark">+2 pts</span>
+        &nbsp; 3º avança corretamente <span class="badge bg-primary">+4 pts</span>
+    </div>
+
+    <!-- Cards de grupo -->
+    <div class="row g-3">
+        <th:block th:each="g : ${groups}">
+            <div class="col-12 col-md-6 col-xl-4">
+                <div th:replace="~{special-predictions/group-card :: groupCard(${g}, ${predsByGroup.get(g)}, ${teamsByGroup.get(g)}, ${deadline}, ${deadlinePassed})}"></div>
+            </div>
+        </th:block>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function localizeTimes(root) {
+    const p = n => String(n).padStart(2, '0');
+    (root || document).querySelectorAll('.local-time[data-ms]').forEach(el => {
+        const d = new Date(+el.dataset.ms);
+        if (isNaN(d.getTime())) return;
+        el.textContent = p(d.getDate()) + '/' + p(d.getMonth()+1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    });
+}
+localizeTimes();
+document.addEventListener('htmx:afterSwap', e => localizeTimes(e.detail.elt));
+</script>
+</body>
+</html>
