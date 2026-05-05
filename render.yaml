@@ -1,0 +1,32 @@
+databases:
+  - name: bolao-db
+    databaseName: bolao
+    user: bolao
+    plan: free
+
+services:
+  - type: web
+    name: bolao-wc-2026
+    runtime: docker
+    plan: free
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: bolao-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: bolao-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: bolao-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: bolao-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: bolao-db
+          property: password
