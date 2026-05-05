@@ -27,11 +27,11 @@
         </span>
         <span class="ms-3 text-muted small" id="third-counter">
             <i class="bi bi-info-circle"></i>
-            Terceiros que avançam: <strong th:text="${thirdQualifiesCount}">0</strong>/8
-            <span th:if="${thirdQualifiesCount != 8}" class="text-warning ms-1">
+            Terceiros que avançam: <strong id="third-count" th:text="${thirdQualifiesCount}">0</strong>/8
+            <span class="text-warning ms-1" th:classappend="${thirdQualifiesCount == 8 ? ' d-none' : ''}">
                 <i class="bi bi-exclamation-triangle-fill"></i> Marque exatamente 8
             </span>
-            <span th:if="${thirdQualifiesCount == 8}" class="text-success ms-1">
+            <span class="text-success ms-1" th:classappend="${thirdQualifiesCount != 8 ? ' d-none' : ''}">
                 <i class="bi bi-check-circle-fill"></i>
             </span>
         </span>
@@ -66,7 +66,24 @@ function localizeTimes(root) {
     });
 }
 localizeTimes();
-document.addEventListener('htmx:afterSwap', e => localizeTimes(e.detail.elt));
+
+function updateThirdCounter() {
+    const count = document.querySelectorAll('input[name="thirdQualifies"]:checked').length;
+    const countEl = document.getElementById('third-count');
+    if (!countEl) return;
+    countEl.textContent = count;
+    const counter = document.getElementById('third-counter');
+    counter.querySelector('.text-warning').classList.toggle('d-none', count === 8);
+    counter.querySelector('.text-success').classList.toggle('d-none', count !== 8);
+}
+updateThirdCounter();
+document.addEventListener('change', e => {
+    if (e.target.name === 'thirdQualifies') updateThirdCounter();
+});
+document.addEventListener('htmx:afterSwap', e => {
+    localizeTimes(e.detail.elt);
+    updateThirdCounter();
+});
 </script>
 </body>
 </html>
