@@ -27,4 +27,7 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     @Query("SELECT m FROM Match m JOIN FETCH m.stage JOIN FETCH m.homeTeam JOIN FETCH m.awayTeam WHERE m.matchDatetime BETWEEN :from AND :to ORDER BY m.matchDatetime ASC")
     List<Match> findByDatetimeBetween(@Param("from") Instant from, @Param("to") Instant to);
+
+    @Query("SELECT COUNT(m) FROM Match m JOIN m.stage s WHERE s.code = 'GROUP'")
+    long countGroupStageMatches();
 }

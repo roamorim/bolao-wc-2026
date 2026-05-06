@@ -1,5 +1,6 @@
 package br.com.bolao.web.controller.admin;
 
+import br.com.bolao.service.AdminPicksService;
 import br.com.bolao.service.UserService;
 import br.com.bolao.web.dto.request.CreateUserRequest;
 import jakarta.validation.Valid;
@@ -16,15 +17,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AdminUserController {
 
     private final UserService userService;
+    private final AdminPicksService adminPicksService;
 
-    public AdminUserController(UserService userService) {
+    public AdminUserController(UserService userService, AdminPicksService adminPicksService) {
         this.userService = userService;
+        this.adminPicksService = adminPicksService;
     }
 
     @GetMapping
     public String listUsers(Model model) {
         model.addAttribute("users", userService.findAll());
         model.addAttribute("createRequest", new CreateUserRequest());
+        model.addAttribute("picksStatus", adminPicksService.getPicksStatuses());
+        model.addAttribute("totalGroupMatches", adminPicksService.getTotalGroupMatches());
         return "admin/users";
     }
 
@@ -37,6 +42,8 @@ public class AdminUserController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("users", userService.findAll());
+            model.addAttribute("picksStatus", adminPicksService.getPicksStatuses());
+            model.addAttribute("totalGroupMatches", adminPicksService.getTotalGroupMatches());
             return "admin/users";
         }
 

@@ -68,6 +68,7 @@
                                 <th>Email</th>
                                 <th class="text-center">Role</th>
                                 <th class="text-center">Ativo</th>
+                                <th>Apostas</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -84,6 +85,20 @@
                             <td class="text-center">
                                 <i th:if="${u.active}" class="bi bi-check-circle-fill text-success"></i>
                                 <i th:unless="${u.active}" class="bi bi-x-circle-fill text-danger"></i>
+                            </td>
+                            <td th:with="ps=${picksStatus[u.id]}" class="small">
+                                <div>
+                                    <span class="badge bg-secondary"
+                                          th:text="${(ps != null ? ps.matchPicksCount : 0) + '/' + totalGroupMatches + ' jogos'}">0/48 jogos</span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-secondary"
+                                          th:text="${(ps != null ? ps.groupClassPicksCount : 0) + '/12 grupos'}">0/12 grupos</span>
+                                </div>
+                                <div class="mt-1">
+                                    <span th:class="${'badge me-1 ' + (ps != null and ps.hasSemifinalists ? 'bg-success' : 'bg-secondary bg-opacity-25 text-secondary')}">Semi</span>
+                                    <span th:class="${'badge ' + (ps != null and ps.hasTopScorer ? 'bg-success' : 'bg-secondary bg-opacity-25 text-secondary')}">Art.</span>
+                                </div>
                             </td>
                             <td>
                                 <!-- Toggle ativo -->

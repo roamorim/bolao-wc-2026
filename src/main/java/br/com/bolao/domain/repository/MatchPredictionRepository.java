@@ -18,4 +18,7 @@ public interface MatchPredictionRepository extends JpaRepository<MatchPrediction
 
     @Query("SELECT p FROM MatchPrediction p JOIN FETCH p.match m JOIN FETCH m.homeTeam JOIN FETCH m.awayTeam WHERE p.user.id = :userId ORDER BY m.matchDatetime ASC")
     List<MatchPrediction> findByUserIdWithMatch(@Param("userId") Long userId);
+
+    @Query("SELECT p.user.id, COUNT(p) FROM MatchPrediction p JOIN p.match m JOIN m.stage s WHERE s.code = 'GROUP' GROUP BY p.user.id")
+    List<Object[]> countGroupStagePredictionsPerUser();
 }
