@@ -112,7 +112,8 @@
                                 <!-- Excluir -->
                                 <form th:action="@{/admin/users/{id}/delete(id=${u.id})}"
                                       method="post" class="d-inline"
-                                      th:onsubmit="${'return confirm(\'Excluir ' + u.username + ' e todas as apostas dele?\')'}">
+                                      th:attr="data-name=${u.username}"
+                                      onsubmit="return confirm('Excluir ' + this.dataset.name + ' e todas as apostas dele?')">
                                     <button class="btn btn-sm btn-outline-danger" title="Excluir">
                                         <i class="bi bi-trash"></i>
                                     </button>
