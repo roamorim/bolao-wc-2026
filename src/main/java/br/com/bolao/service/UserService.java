@@ -67,4 +67,20 @@ public class UserService {
         User user = findById(id);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
     }
+
+    @Transactional
+    public void updateUser(Long id, String displayName, String email, boolean admin) {
+        User user = findById(id);
+        if (!user.getEmail().equalsIgnoreCase(email) && userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email já em uso: " + email);
+        }
+        user.setDisplayName(displayName);
+        user.setEmail(email);
+        user.setRole(admin ? UserRole.ADMIN : UserRole.USER);
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        userRepository.delete(findById(id));
+    }
 }

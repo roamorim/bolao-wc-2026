@@ -86,17 +86,77 @@
                                 <i th:unless="${u.active}" class="bi bi-x-circle-fill text-danger"></i>
                             </td>
                             <td>
+                                <!-- Toggle ativo -->
                                 <form th:action="@{/admin/users/{id}/toggle-active(id=${u.id})}"
                                       method="post" class="d-inline">
                                     <button class="btn btn-sm btn-outline-warning"
                                             th:text="${u.active} ? 'Desativar' : 'Ativar'">Ativar</button>
                                 </form>
+
+                                <!-- Editar -->
+                                <button class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        th:data-bs-target="${'#editModal-' + u.id}"
+                                        title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <!-- Redefinir senha -->
                                 <button class="btn btn-sm btn-outline-secondary"
                                         data-bs-toggle="modal"
-                                        th:data-bs-target="${'#resetPwdModal-' + u.id}">
+                                        th:data-bs-target="${'#resetPwdModal-' + u.id}"
+                                        title="Redefinir senha">
                                     <i class="bi bi-key"></i>
                                 </button>
 
+                                <!-- Excluir -->
+                                <form th:action="@{/admin/users/{id}/delete(id=${u.id})}"
+                                      method="post" class="d-inline"
+                                      th:onsubmit="${'return confirm(\'Excluir ' + u.username + ' e todas as apostas dele?\')'}">
+                                    <button class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Modal editar -->
+                                <div class="modal fade" th:id="${'editModal-' + u.id}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h6 class="modal-title">Editar — <span th:text="${u.username}"></span></h6>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form th:action="@{/admin/users/{id}/edit(id=${u.id})}" method="post">
+                                                <div class="modal-body">
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Nome de exibição</label>
+                                                        <input type="text" name="displayName" class="form-control form-control-sm"
+                                                               th:value="${u.displayName}" required/>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label small">Email</label>
+                                                        <input type="email" name="email" class="form-control form-control-sm"
+                                                               th:value="${u.email}" required/>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input type="checkbox" name="admin" value="true"
+                                                               class="form-check-input"
+                                                               th:id="${'isAdmin-' + u.id}"
+                                                               th:checked="${u.role.name() == 'ADMIN'}"/>
+                                                        <label class="form-check-label small"
+                                                               th:for="${'isAdmin-' + u.id}">Administrador</label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal redefinir senha -->
                                 <div class="modal fade" th:id="${'resetPwdModal-' + u.id}" tabindex="-1">
                                     <div class="modal-dialog modal-sm">
                                         <div class="modal-content">
