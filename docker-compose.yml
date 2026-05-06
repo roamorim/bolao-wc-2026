@@ -23,7 +23,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-bolao}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-bolao}
       DB_USERNAME: ${DB_USERNAME:-bolao}
       DB_PASSWORD: ${DB_PASSWORD:-bolao}
       PORT: 8080
