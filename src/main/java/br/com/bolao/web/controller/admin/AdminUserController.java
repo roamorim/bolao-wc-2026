@@ -1,5 +1,6 @@
 package br.com.bolao.web.controller.admin;
 
+import br.com.bolao.service.AdminAuditService;
 import br.com.bolao.service.AdminPicksService;
 import br.com.bolao.service.UserService;
 import br.com.bolao.web.dto.request.CreateUserRequest;
@@ -18,10 +19,13 @@ public class AdminUserController {
 
     private final UserService userService;
     private final AdminPicksService adminPicksService;
+    private final AdminAuditService adminAuditService;
 
-    public AdminUserController(UserService userService, AdminPicksService adminPicksService) {
+    public AdminUserController(UserService userService, AdminPicksService adminPicksService,
+            AdminAuditService adminAuditService) {
         this.userService = userService;
         this.adminPicksService = adminPicksService;
+        this.adminAuditService = adminAuditService;
     }
 
     @GetMapping
@@ -54,6 +58,12 @@ public class AdminUserController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/admin/users";
+    }
+
+    @GetMapping("/{id}/audit")
+    public String auditUser(@PathVariable Long id, Model model) {
+        model.addAttribute("audit", adminAuditService.getAudit(id));
+        return "admin/audit";
     }
 
     @PostMapping("/{id}/toggle-active")

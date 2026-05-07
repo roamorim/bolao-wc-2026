@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Admin - Auditoria')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0">
+                <i class="bi bi-search"></i>
+                Auditoria — <span th:text="${audit.displayName}">Nome</span>
+            </h4>
+            <small class="text-muted" th:text="'@' + ${audit.username}">@username</small>
+        </div>
+        <a th:href="@{/admin/users}" class="btn btn-outline-secondary btn-sm">← Usuários</a>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold" th:text="${audit.matchPointsTotal}">0</div>
+                    <small class="text-muted">Jogos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold" th:text="${audit.groupPointsTotal}">0</div>
+                    <small class="text-muted">Grupos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold" th:text="${audit.semifinalistsPoints}">0</div>
+                    <small class="text-muted">Semifinalistas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold" th:text="${audit.topScorerPoints}">0</div>
+                    <small class="text-muted">Artilheiro</small>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center shadow-sm border-primary">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold text-primary" th:text="${audit.totalPoints()}">0</div>
+                    <small class="text-muted fw-semibold">Total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Predictions -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">
+            <i class="bi bi-dribbble"></i> Palpites de Jogos
+            <span class="badge bg-secondary ms-2" th:text="${audit.matchPredictions.size()}">0</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center">#</th>
+                        <th>Partida</th>
+                        <th class="text-center">Palpite</th>
+                        <th class="text-center">Resultado</th>
+                        <th class="text-center">Pts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${audit.matchPredictions.isEmpty()}">
+                    <td colspan="5" class="text-center text-muted py-3">Nenhum palpite registrado</td>
+                </tr>
+                <tr th:each="r : ${audit.matchPredictions}">
+                    <td class="text-center text-muted fw-light" th:text="${r.matchNumber}">1</td>
+                    <td>
+                        <span th:if="${r.homeTeamFlag != null}"
+                              th:class="${'fi fi-' + r.homeTeamFlag + ' me-1'}"></span>
+                        <span th:text="${r.homeTeam}">Casa</span>
+                        <span class="text-muted mx-1">×</span>
+                        <span th:if="${r.awayTeamFlag != null}"
+                              th:class="${'fi fi-' + r.awayTeamFlag + ' me-1'}"></span>
+                        <span th:text="${r.awayTeam}">Fora</span>
+                        <small class="d-block text-muted" th:text="${r.stageName}">Fase</small>
+                    </td>
+                    <td class="text-center font-monospace fw-bold"
+                        th:text="${r.homeScorePred + ' – ' + r.awayScorePred}">0–0</td>
+                    <td class="text-center font-monospace">
+                        <span th:if="${r.finished}"
+                              th:text="${r.homeScoreActual + ' – ' + r.awayScoreActual}">0–0</span>
+                        <span th:unless="${r.finished}" class="text-muted small">Não decidido</span>
+                    </td>
+                    <td class="text-center">
+                        <span th:if="${r.pointsEarned != null}"
+                              th:class="${'badge ' + (r.pointsEarned > 0 ? 'bg-success' : 'bg-secondary')}"
+                              th:text="${r.pointsEarned}">0</span>
+                        <span th:if="${r.pointsEarned == null}" class="text-muted">—</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Group Classification -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold">
+            <i class="bi bi-list-ol"></i> Classificação dos Grupos
+            <span class="badge bg-secondary ms-2" th:text="${audit.groupClassifications.size()}">0</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Grupo</th>
+                        <th>Palpite: 1º</th>
+                        <th>Palpite: 2º</th>
+                        <th>Palpite: 3º</th>
+                        <th>Real: 1º</th>
+                        <th>Real: 2º</th>
+                        <th>Real: 3º</th>
+                        <th class="text-center">Pts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${audit.groupClassifications.isEmpty()}">
+                    <td colspan="8" class="text-center text-muted py-3">Nenhum palpite de grupo registrado</td>
+                </tr>
+                <tr th:each="r : ${audit.groupClassifications}">
+                    <td class="fw-bold" th:text="${'Grupo ' + r.groupName}">Grupo A</td>
+                    <td th:text="${r.predictedFirst}">—</td>
+                    <td th:text="${r.predictedSecond}">—</td>
+                    <td>
+                        <span th:text="${r.predictedThird != null ? r.predictedThird : '—'}">—</span>
+                        <span th:if="${r.predictedThird != null and r.predictedThirdQualifies}"
+                              class="badge bg-info text-dark ms-1" style="font-size:.6rem">avança</span>
+                    </td>
+                    <td>
+                        <span th:if="${r.resultRecorded}" th:text="${r.actualFirst}">—</span>
+                        <span th:unless="${r.resultRecorded}" class="text-muted">—</span>
+                    </td>
+                    <td>
+                        <span th:if="${r.resultRecorded}" th:text="${r.actualSecond}">—</span>
+                        <span th:unless="${r.resultRecorded}" class="text-muted">—</span>
+                    </td>
+                    <td>
+                        <span th:if="${r.resultRecorded}">
+                            <span th:text="${r.actualThird != null ? r.actualThird : '—'}">—</span>
+                            <span th:if="${r.actualThird != null and r.actualThirdQualifies}"
+                                  class="badge bg-info text-dark ms-1" style="font-size:.6rem">avança</span>
+                        </span>
+                        <span th:unless="${r.resultRecorded}" class="text-muted">—</span>
+                    </td>
+                    <td class="text-center">
+                        <span th:if="${r.pointsEarned != null}"
+                              th:class="${'badge ' + (r.pointsEarned > 0 ? 'bg-success' : 'bg-secondary')}"
+                              th:text="${r.pointsEarned}">0</span>
+                        <span th:if="${r.pointsEarned == null}" class="text-muted">—</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Semifinalists & Top Scorer -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold"><i class="bi bi-trophy"></i> Semifinalistas</div>
+                <div class="card-body">
+                    <div th:if="${audit.semifinalists != null}">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="badge bg-secondary fs-6" th:text="${audit.semifinalists.team1}">T1</span>
+                            <span class="badge bg-secondary fs-6" th:text="${audit.semifinalists.team2}">T2</span>
+                            <span class="badge bg-secondary fs-6" th:text="${audit.semifinalists.team3}">T3</span>
+                            <span class="badge bg-secondary fs-6" th:text="${audit.semifinalists.team4}">T4</span>
+                        </div>
+                        <div>
+                            Pontos:
+                            <span th:if="${audit.semifinalists.pointsEarned != null}"
+                                  th:class="${'badge ' + (audit.semifinalists.pointsEarned > 0 ? 'bg-success' : 'bg-secondary')}"
+                                  th:text="${audit.semifinalists.pointsEarned}">0</span>
+                            <span th:if="${audit.semifinalists.pointsEarned == null}"
+                                  class="text-muted small">Não calculado</span>
+                        </div>
+                    </div>
+                    <p th:if="${audit.semifinalists == null}" class="text-muted mb-0">Não preenchido</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold"><i class="bi bi-person-badge"></i> Artilheiro</div>
+                <div class="card-body">
+                    <div th:if="${audit.topScorer != null}">
+                        <p class="mb-3">
+                            <strong th:text="${audit.topScorer.playerName}">Nome</strong>
+                            <span class="text-muted ms-1"
+                                  th:text="'(' + ${audit.topScorer.teamName} + ')'">País</span>
+                        </p>
+                        <div>
+                            Pontos:
+                            <span th:if="${audit.topScorer.pointsEarned != null}"
+                                  th:class="${'badge ' + (audit.topScorer.pointsEarned > 0 ? 'bg-success' : 'bg-secondary')}"
+                                  th:text="${audit.topScorer.pointsEarned}">0</span>
+                            <span th:if="${audit.topScorer.pointsEarned == null}"
+                                  class="text-muted small">Não calculado</span>
+                        </div>
+                    </div>
+                    <p th:if="${audit.topScorer == null}" class="text-muted mb-0">Não preenchido</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

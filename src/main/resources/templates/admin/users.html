@@ -101,6 +101,12 @@
                                 </div>
                             </td>
                             <td>
+                                <!-- Auditoria -->
+                                <a th:href="@{/admin/users/{id}/audit(id=${u.id})}"
+                                   class="btn btn-sm btn-outline-info" title="Auditoria de apostas">
+                                    <i class="bi bi-search"></i>
+                                </a>
+
                                 <!-- Toggle ativo -->
                                 <form th:action="@{/admin/users/{id}/toggle-active(id=${u.id})}"
                                       method="post" class="d-inline">
