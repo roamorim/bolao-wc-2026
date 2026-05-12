@@ -2,6 +2,7 @@ package br.com.bolao.domain.repository;
 
 import br.com.bolao.domain.model.TopScorerPrediction;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,4 +18,8 @@ public interface TopScorerPredictionRepository extends JpaRepository<TopScorerPr
 
     @Query("SELECT p FROM TopScorerPrediction p JOIN FETCH p.team WHERE p.user.id = :userId")
     Optional<TopScorerPrediction> findByUserIdWithTeam(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("UPDATE TopScorerPrediction p SET p.pointsEarned = null")
+    void clearAllPointsEarned();
 }

@@ -1,6 +1,7 @@
 package br.com.bolao.web.controller.admin;
 
 import br.com.bolao.domain.model.GroupResult;
+import br.com.bolao.domain.model.Team;
 import br.com.bolao.domain.repository.GroupResultRepository;
 import br.com.bolao.domain.repository.TeamRepository;
 import br.com.bolao.service.ScoringService;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,22 +35,21 @@ public class AdminSpecialResultsController {
         this.scoringService = scoringService;
     }
 
+    public record GroupRow(String name, List<Team> teams, GroupResult result) {}
+
     @GetMapping
     public String page(Model model) {
-        Map<String, GroupResult> resultsByGroup = groupResultRepository.findAll().stream()
+        Map<String, GroupResult> resultsByGroup = groupResultRepository.findAllWithTeams().stream()
             .collect(Collectors.toMap(GroupResult::getGroupName, r -> r));
 
-        var teamsByGroup = teamRepository.findAllByOrderByGroupNameAscNameAsc().stream()
-            .filter(t -> t.getGroupName() != null)
-            .collect(Collectors.groupingBy(
-                t -> t.getGroupName(),
-                LinkedHashMap::new,
-                Collectors.toList()
-            ));
+        List<GroupRow> groupRows = GROUPS.stream()
+            .map(g -> new GroupRow(
+                g,
+                teamRepository.findByGroupNameOrderByName(g),
+                resultsByGroup.get(g)))
+            .toList();
 
-        model.addAttribute("groups", GROUPS);
-        model.addAttribute("resultsByGroup", resultsByGroup);
-        model.addAttribute("teamsByGroup", teamsByGroup);
+        model.addAttribute("groupRows", groupRows);
         return "admin/special-results";
     }
 

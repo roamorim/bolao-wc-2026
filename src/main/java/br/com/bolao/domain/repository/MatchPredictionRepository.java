@@ -4,6 +4,7 @@ import br.com.bolao.domain.model.Match;
 import br.com.bolao.domain.model.MatchPrediction;
 import br.com.bolao.domain.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,4 +25,8 @@ public interface MatchPredictionRepository extends JpaRepository<MatchPrediction
 
     @Query("SELECT p FROM MatchPrediction p JOIN FETCH p.match m JOIN FETCH m.stage LEFT JOIN FETCH m.homeTeam LEFT JOIN FETCH m.awayTeam WHERE p.user.id = :userId ORDER BY m.matchDatetime ASC")
     List<MatchPrediction> findByUserIdWithMatchAndStage(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("UPDATE MatchPrediction p SET p.pointsEarned = null")
+    void clearAllPointsEarned();
 }
