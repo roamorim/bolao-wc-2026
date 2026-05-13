@@ -33,8 +33,14 @@
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/special-predictions}"><i class="bi bi-star"></i> Apostas Especiais</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/bracket}"><i class="bi bi-diagram-3"></i> Mata-mata</a>
+                </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link" th:href="@{/admin/matches}"><i class="bi bi-gear"></i> Admin</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" th:href="@{/admin/knockout}"><i class="bi bi-diagram-3-fill"></i> Mata-mata (admin)</a>
                 </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link" th:href="@{/admin/simulate}"><i class="bi bi-robot"></i> Simulação</a>

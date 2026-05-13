@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/layout :: head('Mata-mata')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div th:replace="~{fragments/layout :: alerts}"></div>
+
+<div class="container py-4">
+    <h4 class="fw-bold mb-1"><i class="bi bi-diagram-3"></i> Mata-mata — Bracket Picker</h4>
+    <p class="text-muted small mb-4">Escolha o vencedor de cada jogo. Cada acerto vale pontos no ranking.</p>
+
+    <!-- Bracket not ready -->
+    <div th:unless="${bracketReady}" class="alert alert-warning">
+        <i class="bi bi-hourglass-split me-2"></i>
+        <strong>Bracket ainda não definido.</strong>
+        As apostas do mata-mata abrirão quando todos os classificados da fase de grupos forem registrados pelo admin.
+    </div>
+
+    <!-- Bracket ready: stages -->
+    <div th:if="${bracketReady}">
+        <div th:each="section : ${sections}" class="mb-5">
+            <h5 class="fw-bold border-bottom pb-2 mb-3" th:text="${section.name}">Fase</h5>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4" th:each="row : ${section.rows}">
+                    <div class="card h-100"
+                         th:classappend="${row.match.finished ? ' border-secondary' : (row.pick != null ? ' border-primary' : '')}">
+                        <div class="card-header py-2 d-flex justify-content-between align-items-center"
+                             th:classappend="${row.match.finished ? ' bg-secondary text-white' : (row.pick != null ? ' bg-primary text-white' : ' bg-light')}">
+                            <span class="small fw-semibold">Jogo <span th:text="${row.match.matchNumber}"></span></span>
+                            <span th:if="${row.match.finished and row.pick != null}" class="small">
+                                <span th:if="${row.pick.pointsEarned != null and row.pick.pointsEarned > 0}"
+                                      class="badge bg-success">
+                                    +<span th:text="${row.pick.pointsEarned}"></span> pts
+                                </span>
+                                <span th:if="${row.pick.pointsEarned != null and row.pick.pointsEarned == 0}"
+                                      class="badge bg-danger">Errou</span>
+                            </span>
+                            <span th:if="${row.pick != null and !row.match.finished}"
+                                  class="badge bg-white text-primary small">Apostado</span>
+                        </div>
+
+                        <div class="card-body p-3">
+                            <!-- Teams -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="text-center" style="flex:1">
+                                    <span th:if="${row.match.homeTeam?.flagCode != null}"
+                                          class="fi"
+                                          th:classappend="${'fi-' + row.match.homeTeam.flagCode}"
+                                          style="font-size:1.5rem"></span>
+                                    <div class="fw-semibold small mt-1" th:text="${row.match.homeTeam?.name ?: 'A definir'}"></div>
+                                </div>
+                                <div class="text-muted fw-bold px-2">
+                                    <span th:if="${row.match.finished}"
+                                          th:text="${row.match.homeScore} + ' × ' + ${row.match.awayScore}"
+                                          class="fs-5"></span>
+                                    <span th:unless="${row.match.finished}" class="text-muted">×</span>
+                                </div>
+                                <div class="text-center" style="flex:1">
+                                    <span th:if="${row.match.awayTeam?.flagCode != null}"
+                                          class="fi"
+                                          th:classappend="${'fi-' + row.match.awayTeam.flagCode}"
+                                          style="font-size:1.5rem"></span>
+                                    <div class="fw-semibold small mt-1" th:text="${row.match.awayTeam?.name ?: 'A definir'}"></div>
+                                </div>
+                            </div>
+
+                            <!-- Finished: show winner -->
+                            <div th:if="${row.match.finished}" class="text-center text-muted small">
+                                <span th:if="${row.pick != null}">
+                                    Você apostou: <strong th:text="${row.pick.predictedWinner?.name}"></strong>
+                                </span>
+                                <span th:unless="${row.pick != null}" class="fst-italic">Sem aposta</span>
+                            </div>
+
+                            <!-- Can pick: show buttons -->
+                            <div th:if="${row.canPick}">
+                                <p class="text-muted small mb-2 text-center">Quem vai vencer?</p>
+                                <div class="d-flex gap-2">
+                                    <form th:action="@{/bracket/{id}/pick(id=${row.match.id})}" method="post" class="flex-fill">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="winnerId" th:value="${row.match.homeTeam.id}"/>
+                                        <button type="submit"
+                                                th:classappend="${row.pick != null and row.pick.predictedWinner != null and row.pick.predictedWinner.id == row.match.homeTeam.id ? ' active' : ''}"
+                                                class="btn btn-outline-primary btn-sm w-100"
+                                                th:text="${row.match.homeTeam.name}">Casa</button>
+                                    </form>
+                                    <form th:action="@{/bracket/{id}/pick(id=${row.match.id})}" method="post" class="flex-fill">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="winnerId" th:value="${row.match.awayTeam.id}"/>
+                                        <button type="submit"
+                                                th:classappend="${row.pick != null and row.pick.predictedWinner != null and row.pick.predictedWinner.id == row.match.awayTeam.id ? ' active' : ''}"
+                                                class="btn btn-outline-primary btn-sm w-100"
+                                                th:text="${row.match.awayTeam.name}">Fora</button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Deadline passed, not finished, no pick -->
+                            <div th:if="${!row.canPick and !row.match.finished and row.pick == null}"
+                                 class="text-center text-muted small fst-italic">
+                                Prazo encerrado — sem aposta registrada
+                            </div>
+
+                            <!-- Waiting for previous round -->
+                            <div th:if="${!row.canPick and !row.match.finished and (row.match.homeTeam == null or row.match.awayTeam == null)}"
+                                 class="text-center text-muted small fst-italic">
+                                Aguardando resultado da fase anterior
+                            </div>
+                        </div>
+
+                        <div class="card-footer py-1 text-muted small"
+                             th:text="${#temporals.format(row.match.matchDatetime, 'dd/MM HH:mm')} + ' UTC'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

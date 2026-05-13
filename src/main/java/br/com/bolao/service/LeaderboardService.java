@@ -17,18 +17,21 @@ public class LeaderboardService {
     private final GroupClassificationPredictionRepository groupClassificationPredictionRepository;
     private final SemifinalistsPredictionRepository semifinalistsPredictionRepository;
     private final TopScorerPredictionRepository topScorerPredictionRepository;
+    private final BracketPickRepository bracketPickRepository;
 
     public LeaderboardService(
             UserRepository userRepository,
             MatchPredictionRepository matchPredictionRepository,
             GroupClassificationPredictionRepository groupClassificationPredictionRepository,
             SemifinalistsPredictionRepository semifinalistsPredictionRepository,
-            TopScorerPredictionRepository topScorerPredictionRepository) {
+            TopScorerPredictionRepository topScorerPredictionRepository,
+            BracketPickRepository bracketPickRepository) {
         this.userRepository = userRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.groupClassificationPredictionRepository = groupClassificationPredictionRepository;
         this.semifinalistsPredictionRepository = semifinalistsPredictionRepository;
         this.topScorerPredictionRepository = topScorerPredictionRepository;
+        this.bracketPickRepository = bracketPickRepository;
     }
 
     @Transactional(readOnly = true)
@@ -60,7 +63,11 @@ public class LeaderboardService {
             .map(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0)
             .orElse(0);
 
-        int total = matchPoints + groupPoints + semifinalistsPoints + topScorerPoints;
+        int bracketPoints = bracketPickRepository.findByUserIdWithDetails(user.getId()).stream()
+            .mapToInt(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0)
+            .sum();
+
+        int total = matchPoints + groupPoints + semifinalistsPoints + topScorerPoints + bracketPoints;
 
         return new LeaderboardEntryResponse(
             user.getId(),
@@ -69,7 +76,8 @@ public class LeaderboardService {
             matchPoints,
             groupPoints,
             semifinalistsPoints,
-            topScorerPoints
+            topScorerPoints,
+            bracketPoints
         );
     }
 }

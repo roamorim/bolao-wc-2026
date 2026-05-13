@@ -18,18 +18,21 @@ public class ScoringService {
     private final GroupClassificationPredictionRepository groupClassificationPredictionRepository;
     private final SemifinalistsPredictionRepository semifinalistsPredictionRepository;
     private final TopScorerPredictionRepository topScorerPredictionRepository;
+    private final BracketPickRepository bracketPickRepository;
 
     public ScoringService(
             ScoringConfigRepository scoringConfigRepository,
             MatchPredictionRepository matchPredictionRepository,
             GroupClassificationPredictionRepository groupClassificationPredictionRepository,
             SemifinalistsPredictionRepository semifinalistsPredictionRepository,
-            TopScorerPredictionRepository topScorerPredictionRepository) {
+            TopScorerPredictionRepository topScorerPredictionRepository,
+            BracketPickRepository bracketPickRepository) {
         this.scoringConfigRepository = scoringConfigRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.groupClassificationPredictionRepository = groupClassificationPredictionRepository;
         this.semifinalistsPredictionRepository = semifinalistsPredictionRepository;
         this.topScorerPredictionRepository = topScorerPredictionRepository;
+        this.bracketPickRepository = bracketPickRepository;
     }
 
     @Transactional
@@ -101,6 +104,16 @@ public class ScoringService {
             boolean correct = p.getPlayerName().trim().toLowerCase().equals(normalized);
             p.setPointsEarned(correct ? points : 0);
         });
+    }
+
+    @Transactional
+    public void calculateBracketPicks(Match match) {
+        Team winner = match.getHomeScore() > match.getAwayScore()
+            ? match.getHomeTeam() : match.getAwayTeam();
+        int pts = loadConfig().get(ScoringKey.BRACKET_CORRECT_PICK);
+        bracketPickRepository.findByMatchId(match.getId()).forEach(p ->
+            p.setPointsEarned(p.getPredictedWinner() != null
+                && p.getPredictedWinner().getId().equals(winner.getId()) ? pts : 0));
     }
 
     @Transactional

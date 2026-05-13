@@ -17,14 +17,17 @@ public class TournamentAdminService {
     private final MatchRepository matchRepository;
     private final ScoringConfigRepository scoringConfigRepository;
     private final ScoringService scoringService;
+    private final BracketAssemblyService bracketAssemblyService;
 
     public TournamentAdminService(
             MatchRepository matchRepository,
             ScoringConfigRepository scoringConfigRepository,
-            ScoringService scoringService) {
+            ScoringService scoringService,
+            BracketAssemblyService bracketAssemblyService) {
         this.matchRepository = matchRepository;
         this.scoringConfigRepository = scoringConfigRepository;
         this.scoringService = scoringService;
+        this.bracketAssemblyService = bracketAssemblyService;
     }
 
     @Transactional
@@ -41,6 +44,11 @@ public class TournamentAdminService {
         match.setStatus(MatchStatus.FINISHED);
 
         scoringService.calculateMatchPredictions(match);
+
+        if (!match.getStage().isGroupStage()) {
+            scoringService.calculateBracketPicks(match);
+            bracketAssemblyService.advanceStageIfComplete(match.getStage().getCode());
+        }
     }
 
     @Transactional
