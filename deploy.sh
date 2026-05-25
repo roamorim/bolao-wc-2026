@@ -170,6 +170,60 @@ cmd_status() {
   docker compose ps
 }
 
+cmd_push() {
+  echo "▶  Push imagem para GHCR"
+  check_docker
+  GHCR_USER="${GHCR_USER:-}"
+  if [[ -z "$GHCR_USER" ]]; then
+    echo "✗ Defina GHCR_USER antes de rodar: GHCR_USER=seu-usuario ./deploy.sh push"
+    exit 1
+  fi
+  IMAGE="ghcr.io/$GHCR_USER/bolao-wc-2026:latest"
+  echo "  Buildando JAR..."
+  setup_java
+  ./mvnw package -DskipTests -q
+  echo "  Buildando imagem Docker: $IMAGE"
+  docker build -t "$IMAGE" .
+  echo "  Publicando no GHCR..."
+  docker push "$IMAGE"
+  echo "✓  Imagem publicada: $IMAGE"
+}
+
+cmd_remote_deploy() {
+  echo "▶  Deploy remoto (Lightsail)"
+  INSTANCE_IP=$(cd "$PROJECT_DIR/terraform" && terraform output -raw instance_ip 2>/dev/null)
+  if [[ -z "$INSTANCE_IP" ]]; then
+    echo "✗ Não foi possível obter o IP da instância. Execute 'terraform apply' primeiro."
+    exit 1
+  fi
+
+  SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+  SSH="ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new ubuntu@$INSTANCE_IP"
+  SCP="scp -i $SSH_KEY -o StrictHostKeyChecking=accept-new"
+
+  echo "  Instância: $INSTANCE_IP"
+
+  if [[ ! -f "$PROJECT_DIR/.env.prod" ]]; then
+    echo "✗ Arquivo .env.prod não encontrado. Copie .env.example → .env.prod e preencha os valores."
+    exit 1
+  fi
+
+  echo "  Enviando arquivos..."
+  $SCP "$PROJECT_DIR/docker-compose.yml" "$PROJECT_DIR/docker-compose.prod.yml" \
+       "$PROJECT_DIR/.env.prod" \
+       ubuntu@$INSTANCE_IP:/opt/bolao/
+
+  echo "  Iniciando containers na VM..."
+  $SSH "
+    cd /opt/bolao
+    mv .env.prod .env
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+  "
+  echo "✓  Deploy concluído: http://$INSTANCE_IP:8080"
+}
+
 cmd_clean() {
   echo "▶  Limpando..."
   cd "$PROJECT_DIR"
@@ -195,6 +249,8 @@ cmd_help() {
   echo "  db         Sobe apenas o PostgreSQL"
   echo "  status     Mostra status dos containers"
   echo "  clean      Remove containers, volumes e o JAR"
+  echo "  push       Builda a imagem Docker e publica no GHCR"
+  echo "  remote-deploy  Envia arquivos e reinicia o app na VM Lightsail"
   echo "  help       Exibe esta ajuda"
   echo ""
   echo "Primeiro uso:"
@@ -214,15 +270,17 @@ echo ""
 COMMAND="${1:-help}"
 
 case "$COMMAND" in
-  dev)     cmd_dev ;;
-  build)   cmd_build ;;
-  start)   cmd_start ;;
-  stop)    cmd_stop ;;
-  restart) cmd_restart ;;
-  logs)    cmd_logs ;;
-  db)      cmd_db ;;
-  status)  cmd_status ;;
-  clean)   cmd_clean ;;
+  dev)           cmd_dev ;;
+  build)         cmd_build ;;
+  start)         cmd_start ;;
+  stop)          cmd_stop ;;
+  restart)       cmd_restart ;;
+  logs)          cmd_logs ;;
+  db)            cmd_db ;;
+  status)        cmd_status ;;
+  clean)         cmd_clean ;;
+  push)          cmd_push ;;
+  remote-deploy) cmd_remote_deploy ;;
   help|--help|-h) cmd_help ;;
   *)
     echo "Comando desconhecido: '$COMMAND'"

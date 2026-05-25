@@ -10,3 +10,13 @@ target/
 
 # Maven Wrapper jar (baixado automaticamente, não precisa commitar)
 .mvn/wrapper/maven-wrapper.jar
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+
+# Production secrets (never commit)
+.env.prod

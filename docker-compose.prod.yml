@@ -1,0 +1,10 @@
+services:
+  postgres:
+    ports: !reset []
+
+  app:
+    image: ghcr.io/${GHCR_USER}/bolao-wc-2026:latest
+    build: !reset null
+    restart: always
+    ports:
+      - "80:8080"
