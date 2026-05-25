@@ -19,7 +19,7 @@ class ScoringServiceTest {
 
     @BeforeEach
     void setUp() {
-        scoringService = new ScoringService(mock(), mock(), mock(), mock(), mock());
+        scoringService = new ScoringService(mock(), mock(), mock(), mock(), mock(), mock());
 
         groupConfig = Map.of(
             ScoringKey.GROUP_EXACT_SCORE,                    10,
