@@ -53,6 +53,7 @@ public class UserService {
         user.setDisplayName(request.getDisplayName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.isAdmin() ? UserRole.ADMIN : UserRole.USER);
+        user.setMustChangePassword(!request.isAdmin());
         return userRepository.save(user);
     }
 
@@ -66,7 +67,9 @@ public class UserService {
     public void resetPassword(Long id, String newPassword) {
         User user = findById(id);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
-        user.setMustChangePassword(true);
+        if (user.getRole() == UserRole.USER) {
+            user.setMustChangePassword(true);
+        }
     }
 
     @Transactional
