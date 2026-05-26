@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -21,11 +20,14 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final LoginSuccessHandler loginSuccessHandler;
+    private final PasswordEncoder passwordEncoder;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
-                          LoginSuccessHandler loginSuccessHandler) {
+                          LoginSuccessHandler loginSuccessHandler,
+                          PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
         this.loginSuccessHandler = loginSuccessHandler;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Bean
@@ -61,17 +63,12 @@ public class SecurityConfig {
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
     }
 }
