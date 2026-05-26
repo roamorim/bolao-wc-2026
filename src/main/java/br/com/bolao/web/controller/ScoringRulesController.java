@@ -33,7 +33,6 @@ public class ScoringRulesController {
         model.addAttribute("classWrongPos",       pts.getOrDefault(ScoringKey.GROUP_CLASSIFICATION_WRONG_POSITION.name(), 0));
         model.addAttribute("thirdQualifies",      pts.getOrDefault(ScoringKey.GROUP_THIRD_QUALIFIES.name(), 0));
         model.addAttribute("bracketPick",         pts.getOrDefault(ScoringKey.BRACKET_CORRECT_PICK.name(), 0));
-        model.addAttribute("semifinalist",        pts.getOrDefault(ScoringKey.SEMIFINALISTS_CORRECT_PER_TEAM.name(), 0));
         model.addAttribute("topScorer",           pts.getOrDefault(ScoringKey.TOP_SCORER_CORRECT.name(), 0));
 
         return "scoring-rules";

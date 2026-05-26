@@ -4,6 +4,5 @@ public record UserPicksStatusDto(
     long matchPicksCount,
     long totalGroupMatches,
     long groupClassPicksCount,
-    boolean hasSemifinalists,
     boolean hasTopScorer
 ) {}

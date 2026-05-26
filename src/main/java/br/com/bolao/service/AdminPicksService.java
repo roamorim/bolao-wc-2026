@@ -3,7 +3,6 @@ package br.com.bolao.service;
 import br.com.bolao.domain.repository.GroupClassificationPredictionRepository;
 import br.com.bolao.domain.repository.MatchPredictionRepository;
 import br.com.bolao.domain.repository.MatchRepository;
-import br.com.bolao.domain.repository.SemifinalistsPredictionRepository;
 import br.com.bolao.domain.repository.TopScorerPredictionRepository;
 import br.com.bolao.web.dto.response.UserPicksStatusDto;
 import org.springframework.stereotype.Service;
@@ -20,19 +19,16 @@ public class AdminPicksService {
     private final MatchRepository matchRepository;
     private final MatchPredictionRepository matchPredictionRepository;
     private final GroupClassificationPredictionRepository groupClassRepo;
-    private final SemifinalistsPredictionRepository semifinalistsRepo;
     private final TopScorerPredictionRepository topScorerRepo;
 
     public AdminPicksService(
             MatchRepository matchRepository,
             MatchPredictionRepository matchPredictionRepository,
             GroupClassificationPredictionRepository groupClassRepo,
-            SemifinalistsPredictionRepository semifinalistsRepo,
             TopScorerPredictionRepository topScorerRepo) {
         this.matchRepository = matchRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.groupClassRepo = groupClassRepo;
-        this.semifinalistsRepo = semifinalistsRepo;
         this.topScorerRepo = topScorerRepo;
     }
 
@@ -55,13 +51,11 @@ public class AdminPicksService {
             groupCountByUser.put((Long) row[0], (Long) row[1]);
         }
 
-        Set<Long> semifinalistsUserIds = new HashSet<>(semifinalistsRepo.findAllUserIds());
         Set<Long> topScorerUserIds = new HashSet<>(topScorerRepo.findAllUserIds());
 
         Set<Long> allUserIds = new HashSet<>();
         allUserIds.addAll(matchCountByUser.keySet());
         allUserIds.addAll(groupCountByUser.keySet());
-        allUserIds.addAll(semifinalistsUserIds);
         allUserIds.addAll(topScorerUserIds);
 
         Map<Long, UserPicksStatusDto> result = new HashMap<>();
@@ -70,7 +64,6 @@ public class AdminPicksService {
                 matchCountByUser.getOrDefault(userId, 0L),
                 totalGroupMatches,
                 groupCountByUser.getOrDefault(userId, 0L),
-                semifinalistsUserIds.contains(userId),
                 topScorerUserIds.contains(userId)
             ));
         }

@@ -1,6 +1,7 @@
 package br.com.bolao.service;
 
 import br.com.bolao.domain.model.*;
+import java.util.List;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
@@ -29,16 +30,34 @@ public class EmailService {
     }
 
     @Async
-    public void sendMatchPredictionConfirmation(User user, Match match, int homeScore, int awayScore) {
+    public void sendGroupStageSummaryConfirmation(User user, List<MatchPrediction> predictions) {
         if (!enabled) return;
-        String home = match.getHomeTeam().getName();
-        String away = match.getAwayTeam().getName();
-        String subject = "✅ Palpite salvo — " + home + " x " + away;
+        StringBuilder rows = new StringBuilder();
+        predictions.forEach(p -> rows.append(
+            "<tr><td style='padding:4px 8px'>" + p.getMatch().getHomeTeam().getName() + "</td>" +
+            "<td style='padding:4px 8px;text-align:center'><strong>" +
+            p.getHomeScorePred() + " x " + p.getAwayScorePred() +
+            "</strong></td>" +
+            "<td style='padding:4px 8px'>" + p.getMatch().getAwayTeam().getName() + "</td></tr>"));
         String body = body(user.getDisplayName(),
-            "<p>Seu palpite para <strong>" + home + " x " + away + "</strong> foi salvo:</p>" +
-            "<p style='font-size:2rem;text-align:center'><strong>" + home + " " + homeScore +
-            " x " + awayScore + " " + away + "</strong></p>");
-        send(user.getEmail(), subject, body);
+            "<p>Você preencheu todos os palpites da <strong>Fase de Grupos</strong>! Resumo:</p>" +
+            "<table style='width:100%;border-collapse:collapse;font-size:0.95rem'>" + rows + "</table>");
+        send(user.getEmail(), "✅ Palpites da fase de grupos completos!", body);
+    }
+
+    @Async
+    public void sendBracketSummaryConfirmation(User user, List<BracketPick> picks) {
+        if (!enabled) return;
+        StringBuilder rows = new StringBuilder();
+        picks.forEach(p -> rows.append(
+            "<tr><td style='padding:4px 8px;color:#6c757d'>" + p.getMatch().getStage().getName() + "</td>" +
+            "<td style='padding:4px 8px'>" + p.getMatch().getHomeTeam().getName() +
+            " x " + p.getMatch().getAwayTeam().getName() + "</td>" +
+            "<td style='padding:4px 8px'><strong>" + p.getPredictedWinner().getName() + "</strong></td></tr>"));
+        String body = body(user.getDisplayName(),
+            "<p>Você preencheu todos os palpites do <strong>Mata-mata</strong>! Resumo:</p>" +
+            "<table style='width:100%;border-collapse:collapse;font-size:0.95rem'>" + rows + "</table>");
+        send(user.getEmail(), "✅ Palpites do mata-mata completos!", body);
     }
 
     @Async
@@ -56,21 +75,6 @@ public class EmailService {
             "<li>1º lugar: <strong>" + first.getName() + "</strong></li>" +
             "<li>2º lugar: <strong>" + second.getName() + "</strong></li>" +
             thirdLine +
-            "</ul>");
-        send(user.getEmail(), subject, body);
-    }
-
-    @Async
-    public void sendSemifinalistsConfirmation(User user, Team t1, Team t2, Team t3, Team t4) {
-        if (!enabled) return;
-        String subject = "✅ Palpite salvo — Semifinalistas";
-        String body = body(user.getDisplayName(),
-            "<p>Seus semifinalistas foram salvos:</p>" +
-            "<ul style='font-size:1.1rem'>" +
-            "<li><strong>" + t1.getName() + "</strong></li>" +
-            "<li><strong>" + t2.getName() + "</strong></li>" +
-            "<li><strong>" + t3.getName() + "</strong></li>" +
-            "<li><strong>" + t4.getName() + "</strong></li>" +
             "</ul>");
         send(user.getEmail(), subject, body);
     }

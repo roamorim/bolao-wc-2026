@@ -126,7 +126,11 @@ public class BracketController {
         pick.setSubmittedAt(Instant.now());
         pick.setPointsEarned(null);
         bracketPickRepository.save(pick);
-        emailService.sendBracketPickConfirmation(user, match, winner);
+        long totalAvailable = matchRepository.countAvailableKnockoutMatches();
+        long userPicks = bracketPickRepository.countByUserId(user.getId());
+        if (userPicks == totalAvailable) {
+            emailService.sendBracketSummaryConfirmation(user, bracketPickRepository.findByUserIdWithDetails(user.getId()));
+        }
 
         ra.addFlashAttribute("successMessage", "Palpite salvo: " + winner.getName() + " vence o jogo " + match.getMatchNumber() + ".");
         return "redirect:/bracket";

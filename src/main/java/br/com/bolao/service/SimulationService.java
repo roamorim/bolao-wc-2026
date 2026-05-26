@@ -10,7 +10,6 @@ import br.com.bolao.domain.repository.GroupClassificationPredictionRepository;
 import br.com.bolao.domain.repository.GroupResultRepository;
 import br.com.bolao.domain.repository.MatchPredictionRepository;
 import br.com.bolao.domain.repository.MatchRepository;
-import br.com.bolao.domain.repository.SemifinalistsPredictionRepository;
 import br.com.bolao.domain.repository.TeamRepository;
 import br.com.bolao.domain.repository.TopScorerPredictionRepository;
 import br.com.bolao.domain.repository.UserRepository;
@@ -53,7 +52,6 @@ public class SimulationService {
     private final MatchRepository matchRepository;
     private final MatchPredictionRepository matchPredictionRepository;
     private final GroupClassificationPredictionRepository groupClassRepo;
-    private final SemifinalistsPredictionRepository semifinalistsRepo;
     private final TopScorerPredictionRepository topScorerRepo;
     private final GroupResultRepository groupResultRepository;
     private final TeamRepository teamRepository;
@@ -66,7 +64,6 @@ public class SimulationService {
             MatchRepository matchRepository,
             MatchPredictionRepository matchPredictionRepository,
             GroupClassificationPredictionRepository groupClassRepo,
-            SemifinalistsPredictionRepository semifinalistsRepo,
             TopScorerPredictionRepository topScorerRepo,
             GroupResultRepository groupResultRepository,
             TeamRepository teamRepository,
@@ -77,7 +74,6 @@ public class SimulationService {
         this.matchRepository = matchRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.groupClassRepo = groupClassRepo;
-        this.semifinalistsRepo = semifinalistsRepo;
         this.topScorerRepo = topScorerRepo;
         this.groupResultRepository = groupResultRepository;
         this.teamRepository = teamRepository;
@@ -194,16 +190,6 @@ public class SimulationService {
                     teams.get(0).getId(), teams.get(1).getId(), thirdId,
                     random.nextBoolean(), FAR_FUTURE);
             }
-
-            // Semifinalists — 4 teams from 4 different groups
-            List<String> groupNames = new ArrayList<>(teamsByGroup.keySet());
-            Collections.shuffle(groupNames, random);
-            predictionService.saveSemifinalists(user,
-                randomTeamId(teamsByGroup, groupNames.get(0)),
-                randomTeamId(teamsByGroup, groupNames.get(1)),
-                randomTeamId(teamsByGroup, groupNames.get(2)),
-                randomTeamId(teamsByGroup, groupNames.get(3)),
-                FAR_FUTURE);
 
             // Top scorer
             Team team = allTeams.get(random.nextInt(allTeams.size()));
@@ -347,7 +333,6 @@ public class SimulationService {
         matchRepository.clearKnockoutTeams();
         matchPredictionRepository.clearAllPointsEarned();
         groupClassRepo.clearAllPointsEarned();
-        semifinalistsRepo.clearAllPointsEarned();
         topScorerRepo.clearAllPointsEarned();
         groupResultRepository.deleteAll();
     }
@@ -373,8 +358,4 @@ public class SimulationService {
         return new int[]{home, away};
     }
 
-    private Long randomTeamId(Map<String, List<Team>> teamsByGroup, String groupName) {
-        List<Team> teams = teamsByGroup.get(groupName);
-        return teams.get(random.nextInt(teams.size())).getId();
-    }
 }

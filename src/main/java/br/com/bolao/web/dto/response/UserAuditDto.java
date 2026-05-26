@@ -9,15 +9,13 @@ public record UserAuditDto(
     String displayName,
     List<MatchPredRow> matchPredictions,
     List<GroupClassRow> groupClassifications,
-    SemifinalistsRow semifinalists,
     TopScorerRow topScorer,
     int matchPointsTotal,
     int groupPointsTotal,
-    int semifinalistsPoints,
     int topScorerPoints
 ) {
     public int totalPoints() {
-        return matchPointsTotal + groupPointsTotal + semifinalistsPoints + topScorerPoints;
+        return matchPointsTotal + groupPointsTotal + topScorerPoints;
     }
 
     public record MatchPredRow(
@@ -47,11 +45,6 @@ public record UserAuditDto(
         String actualThird,
         boolean actualThirdQualifies,
         boolean resultRecorded,
-        Integer pointsEarned
-    ) {}
-
-    public record SemifinalistsRow(
-        String team1, String team2, String team3, String team4,
         Integer pointsEarned
     ) {}
 

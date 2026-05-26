@@ -6,7 +6,6 @@ public record LeaderboardEntryResponse(
     int totalPoints,
     int matchPoints,
     int groupPoints,
-    int semifinalistsPoints,
     int topScorerPoints,
     int bracketPoints
 ) {}

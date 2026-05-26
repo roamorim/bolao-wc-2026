@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 public class PredictionService {
@@ -15,7 +16,6 @@ public class PredictionService {
     private final MatchPredictionRepository matchPredictionRepository;
     private final TeamRepository teamRepository;
     private final GroupClassificationPredictionRepository groupClassificationPredictionRepository;
-    private final SemifinalistsPredictionRepository semifinalistsPredictionRepository;
     private final TopScorerPredictionRepository topScorerPredictionRepository;
     private final EmailService emailService;
 
@@ -24,14 +24,12 @@ public class PredictionService {
             MatchPredictionRepository matchPredictionRepository,
             TeamRepository teamRepository,
             GroupClassificationPredictionRepository groupClassificationPredictionRepository,
-            SemifinalistsPredictionRepository semifinalistsPredictionRepository,
             TopScorerPredictionRepository topScorerPredictionRepository,
             EmailService emailService) {
         this.matchRepository = matchRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.teamRepository = teamRepository;
         this.groupClassificationPredictionRepository = groupClassificationPredictionRepository;
-        this.semifinalistsPredictionRepository = semifinalistsPredictionRepository;
         this.topScorerPredictionRepository = topScorerPredictionRepository;
         this.emailService = emailService;
     }
@@ -60,7 +58,13 @@ public class PredictionService {
         prediction.setPointsEarned(null);
 
         MatchPrediction saved = matchPredictionRepository.save(prediction);
-        emailService.sendMatchPredictionConfirmation(user, match, request.homeScore(), request.awayScore());
+        long total = matchRepository.countGroupStageMatches();
+        long filled = matchPredictionRepository.countGroupStageByUserId(user.getId());
+        if (filled == total) {
+            List<MatchPrediction> all = matchPredictionRepository.findByUserIdWithMatchAndStage(user.getId())
+                .stream().filter(p -> p.getMatch().getStage().isGroupStage()).toList();
+            emailService.sendGroupStageSummaryConfirmation(user, all);
+        }
         return saved;
     }
 
@@ -105,40 +109,6 @@ public class PredictionService {
 
         GroupClassificationPrediction saved = groupClassificationPredictionRepository.save(prediction);
         emailService.sendGroupClassificationConfirmation(user, groupName, first, second, third, thirdQualifies);
-        return saved;
-    }
-
-    @Transactional
-    public SemifinalistsPrediction saveSemifinalists(
-            User user, Long t1, Long t2, Long t3, Long t4, Instant deadline) {
-
-        if (Instant.now().isAfter(deadline)) {
-            throw new PredictionClosedException("Prazo para aposta dos semifinalistas encerrado.");
-        }
-
-        Team team1 = teamRepository.findById(t1).orElseThrow();
-        Team team2 = teamRepository.findById(t2).orElseThrow();
-        Team team3 = teamRepository.findById(t3).orElseThrow();
-        Team team4 = teamRepository.findById(t4).orElseThrow();
-
-        SemifinalistsPrediction prediction = semifinalistsPredictionRepository
-            .findByUserId(user.getId())
-            .orElseGet(() -> {
-                SemifinalistsPrediction p = new SemifinalistsPrediction();
-                p.setUser(user);
-                p.setDeadline(deadline);
-                return p;
-            });
-
-        prediction.setTeam1(team1);
-        prediction.setTeam2(team2);
-        prediction.setTeam3(team3);
-        prediction.setTeam4(team4);
-        prediction.setSubmittedAt(Instant.now());
-        prediction.setPointsEarned(null);
-
-        SemifinalistsPrediction saved = semifinalistsPredictionRepository.save(prediction);
-        emailService.sendSemifinalistsConfirmation(user, team1, team2, team3, team4);
         return saved;
     }
 

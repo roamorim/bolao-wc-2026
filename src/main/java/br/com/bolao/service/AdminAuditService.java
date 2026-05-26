@@ -7,7 +7,6 @@ import br.com.bolao.domain.model.MatchPrediction;
 import br.com.bolao.domain.repository.GroupClassificationPredictionRepository;
 import br.com.bolao.domain.repository.GroupResultRepository;
 import br.com.bolao.domain.repository.MatchPredictionRepository;
-import br.com.bolao.domain.repository.SemifinalistsPredictionRepository;
 import br.com.bolao.domain.repository.TopScorerPredictionRepository;
 import br.com.bolao.web.dto.response.UserAuditDto;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,6 @@ public class AdminAuditService {
     private final MatchPredictionRepository matchPredictionRepo;
     private final GroupClassificationPredictionRepository groupClassRepo;
     private final GroupResultRepository groupResultRepo;
-    private final SemifinalistsPredictionRepository semifinalistsRepo;
     private final TopScorerPredictionRepository topScorerRepo;
 
     public AdminAuditService(
@@ -32,13 +30,11 @@ public class AdminAuditService {
             MatchPredictionRepository matchPredictionRepo,
             GroupClassificationPredictionRepository groupClassRepo,
             GroupResultRepository groupResultRepo,
-            SemifinalistsPredictionRepository semifinalistsRepo,
             TopScorerPredictionRepository topScorerRepo) {
         this.userService = userService;
         this.matchPredictionRepo = matchPredictionRepo;
         this.groupClassRepo = groupClassRepo;
         this.groupResultRepo = groupResultRepo;
-        this.semifinalistsRepo = semifinalistsRepo;
         this.topScorerRepo = topScorerRepo;
     }
 
@@ -88,14 +84,6 @@ public class AdminAuditService {
             })
             .toList();
 
-        var semiRow = semifinalistsRepo.findByUserIdWithTeams(userId)
-            .map(s -> new UserAuditDto.SemifinalistsRow(
-                s.getTeam1().getName(), s.getTeam2().getName(),
-                s.getTeam3().getName(), s.getTeam4().getName(),
-                s.getPointsEarned()
-            ))
-            .orElse(null);
-
         var topRow = topScorerRepo.findByUserIdWithTeam(userId)
             .map(t -> new UserAuditDto.TopScorerRow(
                 t.getPlayerName(), t.getTeam().getName(), t.getPointsEarned()
@@ -106,13 +94,12 @@ public class AdminAuditService {
             .mapToInt(r -> r.pointsEarned() != null ? r.pointsEarned() : 0).sum();
         int groupTotal = groupRows.stream()
             .mapToInt(r -> r.pointsEarned() != null ? r.pointsEarned() : 0).sum();
-        int semiPts = semiRow != null && semiRow.pointsEarned() != null ? semiRow.pointsEarned() : 0;
         int topPts = topRow != null && topRow.pointsEarned() != null ? topRow.pointsEarned() : 0;
 
         return new UserAuditDto(
             user.getId(), user.getUsername(), user.getDisplayName(),
-            matchRows, groupRows, semiRow, topRow,
-            matchTotal, groupTotal, semiPts, topPts
+            matchRows, groupRows, topRow,
+            matchTotal, groupTotal, topPts
         );
     }
 }

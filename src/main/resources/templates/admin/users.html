@@ -96,7 +96,6 @@
                                           th:text="${(ps != null ? ps.groupClassPicksCount : 0) + '/12 grupos'}">0/12 grupos</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span th:class="${'badge me-1 ' + (ps != null and ps.hasSemifinalists ? 'bg-success' : 'bg-secondary bg-opacity-25 text-secondary')}">Semi</span>
                                     <span th:class="${'badge ' + (ps != null and ps.hasTopScorer ? 'bg-success' : 'bg-secondary bg-opacity-25 text-secondary')}">Art.</span>
                                 </div>
                             </td>

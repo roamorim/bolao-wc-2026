@@ -15,7 +15,6 @@ public class LeaderboardService {
     private final UserRepository userRepository;
     private final MatchPredictionRepository matchPredictionRepository;
     private final GroupClassificationPredictionRepository groupClassificationPredictionRepository;
-    private final SemifinalistsPredictionRepository semifinalistsPredictionRepository;
     private final TopScorerPredictionRepository topScorerPredictionRepository;
     private final BracketPickRepository bracketPickRepository;
 
@@ -23,13 +22,11 @@ public class LeaderboardService {
             UserRepository userRepository,
             MatchPredictionRepository matchPredictionRepository,
             GroupClassificationPredictionRepository groupClassificationPredictionRepository,
-            SemifinalistsPredictionRepository semifinalistsPredictionRepository,
             TopScorerPredictionRepository topScorerPredictionRepository,
             BracketPickRepository bracketPickRepository) {
         this.userRepository = userRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.groupClassificationPredictionRepository = groupClassificationPredictionRepository;
-        this.semifinalistsPredictionRepository = semifinalistsPredictionRepository;
         this.topScorerPredictionRepository = topScorerPredictionRepository;
         this.bracketPickRepository = bracketPickRepository;
     }
@@ -55,10 +52,6 @@ public class LeaderboardService {
             .mapToInt(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0)
             .sum();
 
-        int semifinalistsPoints = semifinalistsPredictionRepository.findByUserId(user.getId())
-            .map(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0)
-            .orElse(0);
-
         int topScorerPoints = topScorerPredictionRepository.findByUserId(user.getId())
             .map(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0)
             .orElse(0);
@@ -67,7 +60,7 @@ public class LeaderboardService {
             .mapToInt(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0)
             .sum();
 
-        int total = matchPoints + groupPoints + semifinalistsPoints + topScorerPoints + bracketPoints;
+        int total = matchPoints + groupPoints + topScorerPoints + bracketPoints;
 
         return new LeaderboardEntryResponse(
             user.getId(),
@@ -75,7 +68,6 @@ public class LeaderboardService {
             total,
             matchPoints,
             groupPoints,
-            semifinalistsPoints,
             topScorerPoints,
             bracketPoints
         );

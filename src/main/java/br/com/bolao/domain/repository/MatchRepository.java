@@ -32,6 +32,9 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     @Query("SELECT COUNT(m) FROM Match m JOIN m.stage s WHERE s.code = 'GROUP'")
     long countGroupStageMatches();
 
+    @Query("SELECT COUNT(m) FROM Match m WHERE m.stage.code != 'GROUP' AND m.homeTeam IS NOT NULL AND m.awayTeam IS NOT NULL")
+    long countAvailableKnockoutMatches();
+
     @Query("SELECT m FROM Match m JOIN FETCH m.stage LEFT JOIN FETCH m.homeTeam LEFT JOIN FETCH m.awayTeam WHERE m.stage.code = :stageCode ORDER BY m.matchNumber ASC")
     List<Match> findByStageCodeWithNullableTeams(@Param("stageCode") String stageCode);
 

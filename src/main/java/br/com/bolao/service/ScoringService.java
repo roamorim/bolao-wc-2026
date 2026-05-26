@@ -16,7 +16,6 @@ public class ScoringService {
     private final ScoringConfigRepository scoringConfigRepository;
     private final MatchPredictionRepository matchPredictionRepository;
     private final GroupClassificationPredictionRepository groupClassificationPredictionRepository;
-    private final SemifinalistsPredictionRepository semifinalistsPredictionRepository;
     private final TopScorerPredictionRepository topScorerPredictionRepository;
     private final BracketPickRepository bracketPickRepository;
 
@@ -24,13 +23,11 @@ public class ScoringService {
             ScoringConfigRepository scoringConfigRepository,
             MatchPredictionRepository matchPredictionRepository,
             GroupClassificationPredictionRepository groupClassificationPredictionRepository,
-            SemifinalistsPredictionRepository semifinalistsPredictionRepository,
             TopScorerPredictionRepository topScorerPredictionRepository,
             BracketPickRepository bracketPickRepository) {
         this.scoringConfigRepository = scoringConfigRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.groupClassificationPredictionRepository = groupClassificationPredictionRepository;
-        this.semifinalistsPredictionRepository = semifinalistsPredictionRepository;
         this.topScorerPredictionRepository = topScorerPredictionRepository;
         this.bracketPickRepository = bracketPickRepository;
     }
@@ -78,20 +75,6 @@ public class ScoringService {
             }
 
             p.setPointsEarned(pts);
-        });
-    }
-
-    @Transactional
-    public void calculateSemifinalists(List<Long> actualSemifinalistIds) {
-        int pointsPerTeam = loadConfig().get(ScoringKey.SEMIFINALISTS_CORRECT_PER_TEAM);
-
-        semifinalistsPredictionRepository.findAll().forEach(p -> {
-            long correct = List.of(p.getTeam1().getId(), p.getTeam2().getId(),
-                                   p.getTeam3().getId(), p.getTeam4().getId())
-                .stream()
-                .filter(actualSemifinalistIds::contains)
-                .count();
-            p.setPointsEarned((int) correct * pointsPerTeam);
         });
     }
 
