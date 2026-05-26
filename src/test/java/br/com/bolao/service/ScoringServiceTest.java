@@ -22,16 +22,12 @@ class ScoringServiceTest {
         scoringService = new ScoringService(mock(), mock(), mock(), mock(), mock(), mock());
 
         groupConfig = Map.of(
-            ScoringKey.GROUP_EXACT_SCORE,                    10,
-            ScoringKey.GROUP_CORRECT_WINNER_AND_DIFF,         7,
-            ScoringKey.GROUP_CORRECT_WINNER,                  3,
-            ScoringKey.GROUP_CORRECT_DRAW,                    5,
-            ScoringKey.KNOCKOUT_EXACT_SCORE,                 15,
-            ScoringKey.KNOCKOUT_CORRECT_WINNER_AND_DIFF,     10,
-            ScoringKey.KNOCKOUT_CORRECT_WINNER,               5,
-            ScoringKey.GROUP_CLASSIFICATION_CORRECT_PER_TEAM, 3,
-            ScoringKey.SEMIFINALISTS_CORRECT_PER_TEAM,       10,
-            ScoringKey.TOP_SCORER_CORRECT,                   40
+            ScoringKey.GROUP_EXACT_SCORE,                10,
+            ScoringKey.GROUP_CORRECT_WINNER_AND_DIFF,     7,
+            ScoringKey.GROUP_CORRECT_WINNER,              3,
+            ScoringKey.GROUP_CORRECT_DRAW,                5,
+            ScoringKey.SEMIFINALISTS_CORRECT_PER_TEAM,   10,
+            ScoringKey.TOP_SCORER_CORRECT,               40
         );
         knockoutConfig = groupConfig;
     }
@@ -89,62 +85,28 @@ class ScoringServiceTest {
         assertThat(points).isEqualTo(10);
     }
 
-    // ── Knockout stage ───────────────────────────────────────────────────────
+    // ── Mata-mata ────────────────────────────────────────────────────────────
 
     @Test
-    void knockout_exactScore_returns15() {
-        int points = scoringService.computeMatchPoints(2, 1, 2, 1, true, knockoutConfig);
-        assertThat(points).isEqualTo(15);
+    void knockout_sempreRetorna0_pontuacaoViabracketPick() {
+        // Partidas do mata-mata não pontuam por placar — somente bracket picks
+        assertThat(scoringService.computeMatchPoints(2, 1, 2, 1, true, knockoutConfig)).isEqualTo(0);
+        assertThat(scoringService.computeMatchPoints(3, 1, 1, 0, true, knockoutConfig)).isEqualTo(0);
+        assertThat(scoringService.computeMatchPoints(1, 1, 1, 1, true, knockoutConfig)).isEqualTo(0);
     }
 
-    @Test
-    void knockout_correctWinnerAndDiff_returns10() {
-        int points = scoringService.computeMatchPoints(3, 1, 2, 0, true, knockoutConfig);
-        assertThat(points).isEqualTo(10);
-    }
+    // ── Casos parametrizados ─────────────────────────────────────────────────
 
-    @Test
-    void knockout_correctWinnerOnly_returns5() {
-        int points = scoringService.computeMatchPoints(3, 1, 1, 0, true, knockoutConfig);
-        assertThat(points).isEqualTo(5);
-    }
-
-    @Test
-    void knockout_wrongResult_returns0() {
-        int points = scoringService.computeMatchPoints(2, 0, 0, 2, true, knockoutConfig);
-        assertThat(points).isEqualTo(0);
-    }
-
-    @Test
-    void knockout_drawNotScored_treatsSameAsMistake() {
-        // In knockout, draws go to extra time — prediction of draw is still counted as wrong result
-        // because actual 90-min draw means diff=0; pred of, say, 2-1 (home win) is wrong
-        int points = scoringService.computeMatchPoints(1, 1, 2, 1, true, knockoutConfig);
-        assertThat(points).isEqualTo(0);
-    }
-
-    @Test
-    void knockout_correctDrawPrediction_returns0ForKnockout() {
-        // Draws can happen in knockout (90 min), but GROUP_CORRECT_DRAW shouldn't be used
-        // The code returns 0 because isDraw && !isKnockout is false
-        int points = scoringService.computeMatchPoints(1, 1, 1, 1, true, knockoutConfig);
-        // Exact score match → 15
-        assertThat(points).isEqualTo(15);
-    }
-
-    // ── Parameterized edge cases ─────────────────────────────────────────────
-
-    @ParameterizedTest(name = "actual={0}-{1} pred={2}-{3} knockout={4} → {5}pts")
+    @ParameterizedTest(name = "real={0}-{1} aposta={2}-{3} mata-mata={4} → {5}pts")
     @CsvSource({
-        "1,0, 1,0, false, 10",   // group exact
-        "1,0, 2,1, false,  7",   // group correct winner + same diff (+1 vs +1)
-        "1,0, 1,0,  true, 15",   // knockout exact
-        "3,0, 4,1,  true, 10",   // knockout correct winner + same diff (+3 vs +3)
-        "0,1, 1,0, false,  0",   // wrong result
-        "2,2, 2,2, false, 10",   // group exact draw
-        "2,2, 2,2,  true, 15",   // knockout exact draw
+        "1,0, 1,0, false, 10",   // placar exato grupos
+        "1,0, 2,1, false,  7",   // vencedor + saldo correto grupos
+        "0,1, 1,0, false,  0",   // resultado errado
+        "2,2, 2,2, false, 10",   // empate exato grupos
+        "1,0, 1,0,  true,  0",   // mata-mata → sempre 0
+        "2,1, 2,1,  true,  0",   // mata-mata → sempre 0
     })
-    void parameterizedScoring(int aH, int aA, int pH, int pA, boolean knockout, int expected) {
+    void pontuacaoParametrizada(int aH, int aA, int pH, int pA, boolean knockout, int expected) {
         int points = scoringService.computeMatchPoints(aH, aA, pH, pA, knockout, groupConfig);
         assertThat(points).isEqualTo(expected);
     }

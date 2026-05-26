@@ -132,18 +132,17 @@ public class ScoringService {
     }
 
     // Pure function — no I/O, easily unit-testable
+    // Knockout matches always return 0: pontuação do mata-mata é via bracket picks.
     int computeMatchPoints(
             int actualHome, int actualAway,
             int predHome, int predAway,
             boolean isKnockout,
             Map<ScoringKey, Integer> config) {
 
+        if (isKnockout) return 0;
+
         boolean exactScore = predHome == actualHome && predAway == actualAway;
-        if (exactScore) {
-            return isKnockout
-                ? config.get(ScoringKey.KNOCKOUT_EXACT_SCORE)
-                : config.get(ScoringKey.GROUP_EXACT_SCORE);
-        }
+        if (exactScore) return config.get(ScoringKey.GROUP_EXACT_SCORE);
 
         int actualDiff = actualHome - actualAway;
         int predDiff   = predHome   - predAway;
@@ -151,20 +150,11 @@ public class ScoringService {
 
         if (!correctResult) return 0;
 
-        boolean isDraw = actualDiff == 0;
-        if (isDraw && !isKnockout) {
-            return config.get(ScoringKey.GROUP_CORRECT_DRAW);
-        }
+        if (actualDiff == 0) return config.get(ScoringKey.GROUP_CORRECT_DRAW);
 
-        if (actualDiff == predDiff) {
-            return isKnockout
-                ? config.get(ScoringKey.KNOCKOUT_CORRECT_WINNER_AND_DIFF)
-                : config.get(ScoringKey.GROUP_CORRECT_WINNER_AND_DIFF);
-        }
+        if (actualDiff == predDiff) return config.get(ScoringKey.GROUP_CORRECT_WINNER_AND_DIFF);
 
-        return isKnockout
-            ? config.get(ScoringKey.KNOCKOUT_CORRECT_WINNER)
-            : config.get(ScoringKey.GROUP_CORRECT_WINNER);
+        return config.get(ScoringKey.GROUP_CORRECT_WINNER);
     }
 
     private Map<ScoringKey, Integer> loadConfig() {
