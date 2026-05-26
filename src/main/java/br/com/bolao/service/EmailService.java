@@ -31,6 +31,7 @@ public class EmailService {
 
     @Async
     public void sendGroupStageSummaryConfirmation(User user, List<MatchPrediction> predictions) {
+        log.info("[EMAIL] sendGroupStageSummaryConfirmation → {} ({}) enabled={}", user.getUsername(), user.getEmail(), enabled);
         if (!enabled) return;
         StringBuilder rows = new StringBuilder();
         predictions.forEach(p -> rows.append(
@@ -47,6 +48,7 @@ public class EmailService {
 
     @Async
     public void sendBracketSummaryConfirmation(User user, List<BracketPick> picks) {
+        log.info("[EMAIL] sendBracketSummaryConfirmation → {} ({}) enabled={}", user.getUsername(), user.getEmail(), enabled);
         if (!enabled) return;
         StringBuilder rows = new StringBuilder();
         picks.forEach(p -> rows.append(
@@ -63,6 +65,7 @@ public class EmailService {
     @Async
     public void sendGroupClassificationConfirmation(User user, String groupName,
             Team first, Team second, Team third, boolean thirdQualifies) {
+        log.info("[EMAIL] sendGroupClassificationConfirmation → {} grupo={} enabled={}", user.getUsername(), groupName, enabled);
         if (!enabled) return;
         String subject = "✅ Palpite salvo — Classificação Grupo " + groupName;
         String thirdLine = third != null
@@ -81,6 +84,7 @@ public class EmailService {
 
     @Async
     public void sendTopScorerConfirmation(User user, String playerName, Team team) {
+        log.info("[EMAIL] sendTopScorerConfirmation → {} artilheiro={} enabled={}", user.getUsername(), playerName, enabled);
         if (!enabled) return;
         String subject = "✅ Palpite salvo — Artilheiro";
         String body = body(user.getDisplayName(),
@@ -113,7 +117,7 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
             mailSender.send(message);
-            log.debug("Email enviado para {}: {}", to, subject);
+            log.info("[EMAIL] Enviado para {}: {}", to, subject);
         } catch (Exception e) {
             log.error("Falha ao enviar email para {}: {}", to, e.getMessage());
         }
