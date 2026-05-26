@@ -37,4 +37,5 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
           tags: ghcr.io/${{ github.repository_owner }}/bolao-wc-2026:latest
