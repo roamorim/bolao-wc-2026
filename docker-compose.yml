@@ -23,7 +23,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_HOST: postgres
+      DB_HOST: bolao-postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-bolao}
       DB_USERNAME: ${DB_USERNAME:-bolao}

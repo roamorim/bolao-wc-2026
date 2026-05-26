@@ -210,6 +210,7 @@ cmd_remote_deploy() {
 
   echo "  Enviando arquivos..."
   $SCP "$PROJECT_DIR/docker-compose.yml" "$PROJECT_DIR/docker-compose.prod.yml" \
+       "$PROJECT_DIR/nginx.conf" \
        "$PROJECT_DIR/.env.prod" \
        ubuntu@$INSTANCE_IP:/opt/bolao/
 
@@ -217,7 +218,10 @@ cmd_remote_deploy() {
   $SSH "
     cd /opt/bolao
     mv .env.prod .env
+    # Stop host nginx if running (Docker nginx takes over ports 80/443)
+    sudo systemctl stop nginx 2>/dev/null || true
     docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml down
     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
     docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
   "
