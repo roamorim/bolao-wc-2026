@@ -29,17 +29,20 @@ public class BracketController {
     private final TeamRepository teamRepository;
     private final BracketAssemblyService bracketAssemblyService;
     private final UserService userService;
+    private final EmailService emailService;
 
     public BracketController(MatchRepository matchRepository,
                               BracketPickRepository bracketPickRepository,
                               TeamRepository teamRepository,
                               BracketAssemblyService bracketAssemblyService,
-                              UserService userService) {
+                              UserService userService,
+                              EmailService emailService) {
         this.matchRepository = matchRepository;
         this.bracketPickRepository = bracketPickRepository;
         this.teamRepository = teamRepository;
         this.bracketAssemblyService = bracketAssemblyService;
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     public record MatchRow(Match match, BracketPick pick, boolean canPick) {}
@@ -123,6 +126,7 @@ public class BracketController {
         pick.setSubmittedAt(Instant.now());
         pick.setPointsEarned(null);
         bracketPickRepository.save(pick);
+        emailService.sendBracketPickConfirmation(user, match, winner);
 
         ra.addFlashAttribute("successMessage", "Palpite salvo: " + winner.getName() + " vence o jogo " + match.getMatchNumber() + ".");
         return "redirect:/bracket";

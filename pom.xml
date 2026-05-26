@@ -90,6 +90,12 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Mail -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Dev: auto-restart ao salvar .java, LiveReload para browser -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -17,6 +17,7 @@ public class PredictionService {
     private final GroupClassificationPredictionRepository groupClassificationPredictionRepository;
     private final SemifinalistsPredictionRepository semifinalistsPredictionRepository;
     private final TopScorerPredictionRepository topScorerPredictionRepository;
+    private final EmailService emailService;
 
     public PredictionService(
             MatchRepository matchRepository,
@@ -24,13 +25,15 @@ public class PredictionService {
             TeamRepository teamRepository,
             GroupClassificationPredictionRepository groupClassificationPredictionRepository,
             SemifinalistsPredictionRepository semifinalistsPredictionRepository,
-            TopScorerPredictionRepository topScorerPredictionRepository) {
+            TopScorerPredictionRepository topScorerPredictionRepository,
+            EmailService emailService) {
         this.matchRepository = matchRepository;
         this.matchPredictionRepository = matchPredictionRepository;
         this.teamRepository = teamRepository;
         this.groupClassificationPredictionRepository = groupClassificationPredictionRepository;
         this.semifinalistsPredictionRepository = semifinalistsPredictionRepository;
         this.topScorerPredictionRepository = topScorerPredictionRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -56,7 +59,9 @@ public class PredictionService {
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
 
-        return matchPredictionRepository.save(prediction);
+        MatchPrediction saved = matchPredictionRepository.save(prediction);
+        emailService.sendMatchPredictionConfirmation(user, match, request.homeScore(), request.awayScore());
+        return saved;
     }
 
     @Transactional
@@ -98,7 +103,9 @@ public class PredictionService {
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
 
-        return groupClassificationPredictionRepository.save(prediction);
+        GroupClassificationPrediction saved = groupClassificationPredictionRepository.save(prediction);
+        emailService.sendGroupClassificationConfirmation(user, groupName, first, second, third, thirdQualifies);
+        return saved;
     }
 
     @Transactional
@@ -130,7 +137,9 @@ public class PredictionService {
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
 
-        return semifinalistsPredictionRepository.save(prediction);
+        SemifinalistsPrediction saved = semifinalistsPredictionRepository.save(prediction);
+        emailService.sendSemifinalistsConfirmation(user, team1, team2, team3, team4);
+        return saved;
     }
 
     @Transactional
@@ -155,7 +164,9 @@ public class PredictionService {
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
 
-        return topScorerPredictionRepository.save(prediction);
+        TopScorerPrediction saved = topScorerPredictionRepository.save(prediction);
+        emailService.sendTopScorerConfirmation(user, playerName.trim(), team);
+        return saved;
     }
 
     public static class PredictionClosedException extends RuntimeException {
