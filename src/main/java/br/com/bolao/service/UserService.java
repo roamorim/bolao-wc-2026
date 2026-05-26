@@ -66,6 +66,17 @@ public class UserService {
     public void resetPassword(Long id, String newPassword) {
         User user = findById(id);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(true);
+    }
+
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = findByUsername(username);
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Senha atual incorreta.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
     }
 
     @Transactional
