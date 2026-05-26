@@ -5,6 +5,7 @@ import br.com.bolao.domain.repository.BracketPickRepository;
 import br.com.bolao.domain.repository.MatchRepository;
 import br.com.bolao.domain.repository.TeamRepository;
 import br.com.bolao.service.BracketAssemblyService;
+import br.com.bolao.service.EmailService;
 import br.com.bolao.service.UserService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;

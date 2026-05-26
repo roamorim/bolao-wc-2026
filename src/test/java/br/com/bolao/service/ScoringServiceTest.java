@@ -19,14 +19,13 @@ class ScoringServiceTest {
 
     @BeforeEach
     void setUp() {
-        scoringService = new ScoringService(mock(), mock(), mock(), mock(), mock(), mock());
+        scoringService = new ScoringService(mock(), mock(), mock(), mock(), mock());
 
         groupConfig = Map.of(
             ScoringKey.GROUP_EXACT_SCORE,                10,
             ScoringKey.GROUP_CORRECT_WINNER_AND_DIFF,     7,
             ScoringKey.GROUP_CORRECT_WINNER,              3,
             ScoringKey.GROUP_CORRECT_DRAW,                5,
-            ScoringKey.SEMIFINALISTS_CORRECT_PER_TEAM,   10,
             ScoringKey.TOP_SCORER_CORRECT,               40
         );
         knockoutConfig = groupConfig;
