@@ -1,5 +1,7 @@
 package br.com.bolao.web.controller;
 
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +29,7 @@ public class AuthController {
     public String loginPage(Model model) {
         model.addAttribute("subtitle", subtitle);
         model.addAttribute("paymentAmount", paymentAmount);
-        model.addAttribute("paymentKey", paymentKey);
+        model.addAttribute("paymentLines", Arrays.asList(paymentKey.split("\\|")));
         model.addAttribute("contactUrl", contactUrl);
         model.addAttribute("contactLabel", contactLabel);
         return "auth/login";

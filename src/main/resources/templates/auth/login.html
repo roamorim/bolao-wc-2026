@@ -38,7 +38,9 @@
         <div class="card-footer text-center bg-transparent border-top-0 pb-3 px-4">
             <p class="text-muted small mb-1">Ainda não tem acesso?</p>
             <p class="text-muted small mb-2">Transfira <strong th:text="${paymentAmount}">R$ 150</strong> para a chave/conta abaixo e avise:</p>
-            <p class="font-monospace small text-secondary mb-2 user-select-all" th:text="${paymentKey}">c2297554-7770-4a72-8b6f-b5ee46d3473a</p>
+            <div class="font-monospace small text-secondary mb-2 user-select-all">
+                <div th:each="line : ${paymentLines}" th:text="${line}"></div>
+            </div>
             <a th:href="${contactUrl}" target="_blank" rel="noopener noreferrer"
                class="btn btn-outline-success btn-sm">
                 <i class="bi bi-whatsapp"></i> <span th:text="${contactLabel}">Falar com o Rodrigo</span>
