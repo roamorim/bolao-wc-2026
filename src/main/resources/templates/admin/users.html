@@ -68,6 +68,7 @@
                                 <th>Email</th>
                                 <th class="text-center">Role</th>
                                 <th class="text-center">Ativo</th>
+                                <th class="text-center">1º Login</th>
                                 <th>Apostas</th>
                                 <th>Ações</th>
                             </tr>
@@ -85,6 +86,10 @@
                             <td class="text-center">
                                 <i th:if="${u.active}" class="bi bi-check-circle-fill text-success"></i>
                                 <i th:unless="${u.active}" class="bi bi-x-circle-fill text-danger"></i>
+                            </td>
+                            <td class="text-center">
+                                <i th:if="${!u.mustChangePassword}" class="bi bi-check-circle-fill text-success" title="Já fez login"></i>
+                                <i th:if="${u.mustChangePassword}" class="bi bi-hourglass text-warning" title="Aguardando primeiro login"></i>
                             </td>
                             <td th:with="ps=${picksStatus[u.id]}" class="small">
                                 <div>
