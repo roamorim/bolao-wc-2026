@@ -1,10 +1,14 @@
 package br.com.bolao.web.controller;
 
 import br.com.bolao.domain.model.GroupClassificationPrediction;
+import br.com.bolao.domain.model.Player;
 import br.com.bolao.domain.model.Team;
+import br.com.bolao.domain.model.TopScorerPrediction;
 import br.com.bolao.domain.repository.GroupClassificationPredictionRepository;
 import br.com.bolao.domain.repository.MatchRepository;
+import br.com.bolao.domain.repository.PlayerRepository;
 import br.com.bolao.domain.repository.TeamRepository;
+import br.com.bolao.domain.repository.TopScorerPredictionRepository;
 import br.com.bolao.service.PredictionService;
 import br.com.bolao.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +38,8 @@ public class SpecialPredictionsController {
     private final MatchRepository matchRepository;
     private final TeamRepository teamRepository;
     private final GroupClassificationPredictionRepository predictionRepository;
+    private final TopScorerPredictionRepository topScorerPredictionRepository;
+    private final PlayerRepository playerRepository;
     private final PredictionService predictionService;
     private final UserService userService;
 
@@ -41,14 +47,20 @@ public class SpecialPredictionsController {
             MatchRepository matchRepository,
             TeamRepository teamRepository,
             GroupClassificationPredictionRepository predictionRepository,
+            TopScorerPredictionRepository topScorerPredictionRepository,
+            PlayerRepository playerRepository,
             PredictionService predictionService,
             UserService userService) {
         this.matchRepository = matchRepository;
         this.teamRepository = teamRepository;
         this.predictionRepository = predictionRepository;
+        this.topScorerPredictionRepository = topScorerPredictionRepository;
+        this.playerRepository = playerRepository;
         this.predictionService = predictionService;
         this.userService = userService;
     }
+
+    record PlayerDto(Long id, String name, String team) {}
 
     @GetMapping
     public String page(@AuthenticationPrincipal UserDetails principal, Model model) {
@@ -62,12 +74,23 @@ public class SpecialPredictionsController {
         long thirdQualifiesCount = predsByGroup.values().stream()
             .filter(GroupClassificationPrediction::isThirdQualifies).count();
 
+        List<PlayerDto> players = playerRepository.findAllWithTeamOrdered().stream()
+            .map(p -> new PlayerDto(p.getId(), p.getName(), p.getTeam().getName()))
+            .toList();
+
+        TopScorerPrediction topScorerPred = topScorerPredictionRepository
+            .findByUserIdWithTeam(user.getId()).orElse(null);
+
+        Instant deadline = specialDeadline();
+
         model.addAttribute("groups", GROUPS);
         model.addAttribute("teamsByGroup", teamsByGroup);
         model.addAttribute("predsByGroup", predsByGroup);
-        model.addAttribute("deadline", specialDeadline());
-        model.addAttribute("deadlinePassed", Instant.now().isAfter(specialDeadline()));
+        model.addAttribute("deadline", deadline);
+        model.addAttribute("deadlinePassed", Instant.now().isAfter(deadline));
         model.addAttribute("thirdQualifiesCount", thirdQualifiesCount);
+        model.addAttribute("players", players);
+        model.addAttribute("topScorerPred", topScorerPred);
         return "special-predictions";
     }
 
@@ -137,6 +160,27 @@ public class SpecialPredictionsController {
         }
 
         redirectAttributes.addFlashAttribute("successMessage", "Grupo " + groupName + " salvo!");
+        return "redirect:/special-predictions";
+    }
+
+    @PostMapping("/top-scorer")
+    public String saveTopScorer(
+            @RequestParam Long playerId,
+            @AuthenticationPrincipal UserDetails principal,
+            RedirectAttributes redirectAttributes) {
+
+        var user = userService.findByUsername(principal.getUsername());
+        Player player = playerRepository.findByIdWithTeam(playerId)
+            .orElseThrow(() -> new IllegalArgumentException("Jogador não encontrado"));
+
+        try {
+            predictionService.saveTopScorer(user, player.getName(), player.getTeam().getId(), specialDeadline());
+            redirectAttributes.addFlashAttribute("successMessage",
+                "Artilheiro salvo: " + player.getName() + " (" + player.getTeam().getName() + ")");
+        } catch (PredictionService.PredictionClosedException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/special-predictions";
     }
 

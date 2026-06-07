@@ -37,6 +37,107 @@
         </span>
     </div>
 
+    <!-- Dados dos jogadores para Alpine.js -->
+    <script th:inline="javascript">
+        const _topScorerPlayers = /*[[${players}]]*/ [];
+    </script>
+
+    <!-- Artilheiro do Torneio -->
+    <div class="card shadow-sm mb-4"
+         x-data="{
+           query: '',
+           selectedId: null,
+           open: false,
+           players: _topScorerPlayers,
+           get filtered() {
+             if (this.query.length < 2) return [];
+             const q = this.query.toLowerCase();
+             return this.players.filter(p =>
+               p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q)
+             ).slice(0, 10);
+           },
+           pick(p) {
+             this.selectedId = p.id;
+             this.query = p.name + ' (' + p.team + ')';
+             this.open = false;
+           },
+           onInput() {
+             this.selectedId = null;
+             this.open = this.query.length >= 2;
+           }
+         }">
+        <div class="card-header fw-semibold bg-warning text-dark">
+            <i class="bi bi-star-fill"></i> Artilheiro do Torneio
+            <span class="badge bg-dark ms-2">+40 pts</span>
+        </div>
+        <div class="card-body">
+
+            <!-- Aposta atual -->
+            <div th:if="${topScorerPred != null}" class="mb-3">
+                <span class="text-muted small">Sua aposta atual:</span>
+                <span class="fw-semibold ms-1"
+                      th:text="${topScorerPred.playerName} + ' (' + ${topScorerPred.team.name} + ')'">
+                </span>
+                <span class="badge bg-success ms-1" th:if="${topScorerPred.pointsEarned != null}"
+                      th:text="${topScorerPred.pointsEarned} + ' pts'"></span>
+            </div>
+
+            <!-- Form de busca (apenas se prazo não passou) -->
+            <div th:if="${!deadlinePassed}">
+                <div th:if="${players.isEmpty()}" class="text-muted small">
+                    <i class="bi bi-hourglass"></i> Jogadores ainda não cadastrados.
+                </div>
+                <div th:if="${!players.isEmpty()}">
+                    <form method="post" th:action="@{/special-predictions/top-scorer}">
+                        <input type="hidden" name="playerId" :value="selectedId">
+
+                        <div class="position-relative">
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Digite o nome do jogador ou seleção..."
+                                   x-model="query"
+                                   @input="onInput()"
+                                   @blur="setTimeout(() => open = false, 150)"
+                                   autocomplete="off">
+
+                            <!-- Lista de resultados -->
+                            <ul x-show="open && filtered.length > 0"
+                                class="list-group position-absolute w-100 shadow"
+                                style="z-index:1000; top:100%; max-height:240px; overflow-y:auto">
+                                <template x-for="p in filtered" :key="p.id">
+                                    <li class="list-group-item list-group-item-action py-1"
+                                        style="cursor:pointer"
+                                        @mousedown.prevent="pick(p)"
+                                        x-text="p.name + ' (' + p.team + ')'">
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        <button class="btn btn-warning mt-2"
+                                type="submit"
+                                :disabled="!selectedId">
+                            <i class="bi bi-check-lg"></i> Salvar aposta
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div th:if="${deadlinePassed && topScorerPred == null}" class="text-muted small">
+                <i class="bi bi-lock-fill"></i> Prazo encerrado sem aposta registrada.
+            </div>
+        </div>
+        <div class="card-footer text-muted small">
+            <i class="bi bi-clock"></i>
+            Prazo:
+            <span th:if="${!deadlinePassed}"
+                  class="local-time"
+                  th:data-ms="${deadline.toEpochMilli()}"
+                  th:text="${#temporals.format(deadline, 'dd/MM HH:mm')}"></span>
+            <span th:if="${deadlinePassed}">encerrado</span>
+        </div>
+    </div>
+
     <!-- Legenda de pontuação -->
     <div class="alert alert-light border small mb-4">
         <strong>Pontuação por grupo:</strong>

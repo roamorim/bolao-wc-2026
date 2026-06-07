@@ -17,6 +17,53 @@
         Ao salvar, os pontos das apostas de classificação daquele grupo são calculados automaticamente.
     </p>
 
+    <!-- Artilheiro oficial -->
+    <div class="card shadow-sm mb-4" th:classappend="${topScorerResult != null ? ' border-success' : ''}">
+        <div class="card-header fw-semibold"
+             th:classappend="${topScorerResult != null ? ' bg-success text-white' : ' bg-warning text-dark'}">
+            <i class="bi bi-star-fill"></i> Artilheiro Oficial do Torneio
+            <span th:if="${topScorerResult != null}" class="badge bg-white text-success ms-2">
+                <i class="bi bi-check-circle-fill"></i> Registrado
+            </span>
+        </div>
+        <div class="card-body">
+            <div th:if="${topScorerResult != null}" class="mb-3">
+                <span class="text-muted small">Registrado:</span>
+                <strong class="ms-1" th:text="${topScorerResult.playerName}"></strong>
+                <span class="text-muted small ms-2">(pontos já calculados)</span>
+            </div>
+            <form th:action="@{/admin/special-results/top-scorer}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto flex-grow-1">
+                        <label class="form-label small mb-1 text-muted">
+                            <span th:if="${topScorerResult == null}">Selecione o artilheiro</span>
+                            <span th:if="${topScorerResult != null}">Corrigir artilheiro</span>
+                        </label>
+                        <select name="playerId" class="form-select" required>
+                            <option value="" disabled selected>— Selecione —</option>
+                            <optgroup th:each="entry : ${playersByTeam}"
+                                      th:label="${entry.key}">
+                                <option th:each="p : ${entry.value}"
+                                        th:value="${p.id}"
+                                        th:text="${p.name}"
+                                        th:selected="${topScorerResult != null && topScorerResult.playerName == p.name}">
+                                </option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-warning" type="submit">
+                            <i class="bi bi-calculator"></i>
+                            <span th:if="${topScorerResult == null}">Registrar e Calcular Pontos</span>
+                            <span th:if="${topScorerResult != null}">Recalcular</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="row g-3">
         <div class="col-12 col-md-6 col-xl-4" th:each="row : ${groupRows}">
 
