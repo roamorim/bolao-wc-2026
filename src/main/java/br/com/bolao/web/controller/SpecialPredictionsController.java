@@ -33,7 +33,7 @@ public class SpecialPredictionsController {
         List.of("A","B","C","D","E","F","G","H","I","J","K","L");
 
     private static final Instant FALLBACK_DEADLINE =
-        Instant.parse("2026-06-11T14:30:00Z");
+        Instant.parse("2026-06-11T18:30:00Z");
 
     private final MatchRepository matchRepository;
     private final TeamRepository teamRepository;
@@ -192,7 +192,7 @@ public class SpecialPredictionsController {
 
     private Instant specialDeadline() {
         return matchRepository.findByMatchNumber(1)
-            .map(m -> m.getPredictionDeadline())
+            .map(m -> m.getMatchDatetime().minusSeconds(30 * 60))
             .orElse(FALLBACK_DEADLINE);
     }
 }
