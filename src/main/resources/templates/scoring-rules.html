@@ -10,63 +10,38 @@
 
     <h4 class="fw-bold mb-4"><i class="bi bi-book"></i> Regras</h4>
 
-    <!-- Estimativa de Premiação -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold bg-warning text-dark">
-            <i class="bi bi-cash-coin"></i> Estimativa de Premiação
-        </div>
-        <div class="card-body p-0">
-            <table class="table table-sm mb-0">
-                <tbody>
-                    <tr>
-                        <td class="ps-3 text-muted">
-                            <span th:text="${participantCount}">0</span> participantes
-                            × <span th:text="${currencySymbol}">R$</span> <span th:text="${paymentAmountFmt}">150</span>
-                        </td>
-                        <td class="text-end pe-3 fw-semibold">
-                            <span th:text="${currencySymbol}">R$</span> <span th:text="${grossFmt}">0</span>
-                        </td>
-                    </tr>
-                    <tr th:if="${hostingCost > 0}">
-                        <td class="ps-3 text-muted">Custo de hospedagem (estimado)</td>
-                        <td class="text-end pe-3 text-danger">
-                            − <span th:text="${currencySymbol}">R$</span> <span th:text="${hostingCostFmt}">0</span>
-                        </td>
-                    </tr>
-                    <tr class="table-light">
-                        <td class="ps-3 fw-semibold">Valor líquido estimado</td>
-                        <td class="text-end pe-3 fw-bold fs-5">
-                            <span th:text="${currencySymbol}">R$</span> <span th:text="${netFmt}">0</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Prazos para Apostas -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold bg-info text-white">
+            <i class="bi bi-clock-fill"></i> Prazos para Apostas
         </div>
         <ul class="list-group list-group-flush">
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><span class="me-1">🥇</span> 1º lugar <span class="badge bg-secondary ms-1">70%</span></span>
-                <span class="fw-bold text-success">
-                    <span th:text="${currencySymbol}">R$</span> <span th:text="${prize1Fmt}">0</span>
+            <li class="list-group-item">
+                <div class="fw-semibold mb-1"><i class="bi bi-grid-3x3-gap text-success me-1"></i> Fase de Grupos — Placares</div>
+                <span class="text-muted small">
+                    Cada jogo tem seu próprio prazo: as apostas de placar encerram automaticamente
+                    <strong>24 horas antes do início da partida</strong>.
+                    Fique atento à contagem regressiva exibida em cada jogo.
                 </span>
             </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><span class="me-1">🥈</span> 2º lugar <span class="badge bg-secondary ms-1">20%</span></span>
-                <span class="fw-bold text-success">
-                    <span th:text="${currencySymbol}">R$</span> <span th:text="${prize2Fmt}">0</span>
+            <li class="list-group-item">
+                <div class="fw-semibold mb-1"><i class="bi bi-star text-success me-1"></i> Apostas Especiais — Artilheiro e Classificação dos Grupos</div>
+                <span class="text-muted small">
+                    As apostas de artilheiro e de classificação (1º, 2º e 3º de cada grupo) encerram juntas,
+                    <strong>30 minutos antes do primeiro jogo do torneio</strong> (11/06 às 14h30 BRT).
+                    Após esse prazo, não é possível alterar ou registrar essas apostas.
                 </span>
             </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><span class="me-1">🥉</span> 3º lugar <span class="badge bg-secondary ms-1">10%</span></span>
-                <span class="fw-bold text-success">
-                    <span th:text="${currencySymbol}">R$</span> <span th:text="${prize3Fmt}">0</span>
+            <li class="list-group-item">
+                <div class="fw-semibold mb-1"><i class="bi bi-diagram-3 text-success me-1"></i> Mata-mata — Chaveamento</div>
+                <span class="text-muted small">
+                    No mata-mata, você aposta o <strong>vencedor de cada confronto do chaveamento inteiro de uma vez</strong>
+                    — dos 16avos de final até a grande final — sem previsão de placar (vale prorrogação e pênaltis).
+                    O chaveamento é liberado pelo administrador assim que os classificados da fase de grupos forem definidos.
+                    Todas as apostas do mata-mata devem ser feitas <strong>antes do primeiro jogo dos 16avos de final</strong>.
                 </span>
             </li>
         </ul>
-        <div class="card-footer text-muted small">
-            <i class="bi bi-info-circle"></i>
-            Estimativa com base nos <strong th:text="${participantCount}">0</strong> participantes atuais.
-            Calculado sobre uma estimativa de 10 USD de custo de hospedagem — a ser confirmado.
-        </div>
     </div>
 
     <!-- Fase de Grupos -->
@@ -132,7 +107,7 @@
     </div>
 
     <!-- Apostas Especiais -->
-    <div class="card shadow-sm mb-3">
+    <div class="card shadow-sm mb-4">
         <div class="card-header fw-semibold bg-success text-white">
             <i class="bi bi-star"></i> Apostas Especiais
         </div>
@@ -142,6 +117,65 @@
                 <span class="badge bg-success rounded-pill" th:text="${topScorer} + ' pts'">40 pts</span>
             </li>
         </ul>
+    </div>
+
+    <!-- Estimativa de Premiação -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold bg-warning text-dark">
+            <i class="bi bi-cash-coin"></i> Estimativa de Premiação
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <tbody>
+                    <tr>
+                        <td class="ps-3 text-muted">
+                            <span th:text="${participantCount}">0</span> participantes
+                            × <span th:text="${currencySymbol}">R$</span> <span th:text="${paymentAmountFmt}">150</span>
+                        </td>
+                        <td class="text-end pe-3 fw-semibold">
+                            <span th:text="${currencySymbol}">R$</span> <span th:text="${grossFmt}">0</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${hostingCost > 0}">
+                        <td class="ps-3 text-muted">Custo de hospedagem (estimado)</td>
+                        <td class="text-end pe-3 text-danger">
+                            − <span th:text="${currencySymbol}">R$</span> <span th:text="${hostingCostFmt}">0</span>
+                        </td>
+                    </tr>
+                    <tr class="table-light">
+                        <td class="ps-3 fw-semibold">Valor líquido estimado</td>
+                        <td class="text-end pe-3 fw-bold fs-5">
+                            <span th:text="${currencySymbol}">R$</span> <span th:text="${netFmt}">0</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><span class="me-1">🥇</span> 1º lugar <span class="badge bg-secondary ms-1">70%</span></span>
+                <span class="fw-bold text-success">
+                    <span th:text="${currencySymbol}">R$</span> <span th:text="${prize1Fmt}">0</span>
+                </span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><span class="me-1">🥈</span> 2º lugar <span class="badge bg-secondary ms-1">20%</span></span>
+                <span class="fw-bold text-success">
+                    <span th:text="${currencySymbol}">R$</span> <span th:text="${prize2Fmt}">0</span>
+                </span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><span class="me-1">🥉</span> 3º lugar <span class="badge bg-secondary ms-1">10%</span></span>
+                <span class="fw-bold text-success">
+                    <span th:text="${currencySymbol}">R$</span> <span th:text="${prize3Fmt}">0</span>
+                </span>
+            </li>
+        </ul>
+        <div class="card-footer text-muted small">
+            <i class="bi bi-info-circle"></i>
+            Estimativa com base nos <strong th:text="${participantCount}">0</strong> participantes atuais.
+            Calculado sobre uma estimativa de 10 USD de custo de hospedagem — a ser confirmado.
+        </div>
     </div>
 
 </div>
