@@ -17,6 +17,8 @@ public interface GroupClassificationPredictionRepository extends JpaRepository<G
 
     List<GroupClassificationPrediction> findByUserId(Long userId);
 
+    long countByUserId(Long userId);
+
     @Query("SELECT p.user.id, COUNT(p) FROM GroupClassificationPrediction p GROUP BY p.user.id")
     List<Object[]> countPredictionsPerUser();
 

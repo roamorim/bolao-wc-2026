@@ -90,15 +90,17 @@ public class PredictionService {
         Team second = teamRepository.findById(secondTeamId).orElseThrow();
         Team third  = thirdTeamId != null ? teamRepository.findById(thirdTeamId).orElseThrow() : null;
 
-        GroupClassificationPrediction prediction = groupClassificationPredictionRepository
-            .findByUserIdAndGroupName(user.getId(), groupName)
-            .orElseGet(() -> {
-                GroupClassificationPrediction p = new GroupClassificationPrediction();
-                p.setUser(user);
-                p.setGroupName(groupName);
-                p.setDeadline(deadline);
-                return p;
-            });
+        var existing = groupClassificationPredictionRepository
+            .findByUserIdAndGroupName(user.getId(), groupName);
+        boolean isNewGroup = existing.isEmpty();
+
+        GroupClassificationPrediction prediction = existing.orElseGet(() -> {
+            GroupClassificationPrediction p = new GroupClassificationPrediction();
+            p.setUser(user);
+            p.setGroupName(groupName);
+            p.setDeadline(deadline);
+            return p;
+        });
 
         prediction.setFirstPlaceTeam(first);
         prediction.setSecondPlaceTeam(second);
@@ -108,7 +110,7 @@ public class PredictionService {
         prediction.setPointsEarned(null);
 
         GroupClassificationPrediction saved = groupClassificationPredictionRepository.save(prediction);
-        emailService.sendGroupClassificationConfirmation(user, groupName, first, second, third, thirdQualifies);
+        if (isNewGroup) checkAndSendSpecialCompletionEmail(user);
         return saved;
     }
 
@@ -120,14 +122,15 @@ public class PredictionService {
 
         Team team = teamRepository.findById(teamId).orElseThrow();
 
-        TopScorerPrediction prediction = topScorerPredictionRepository
-            .findByUserId(user.getId())
-            .orElseGet(() -> {
-                TopScorerPrediction p = new TopScorerPrediction();
-                p.setUser(user);
-                p.setDeadline(deadline);
-                return p;
-            });
+        var existingTopScorer = topScorerPredictionRepository.findByUserId(user.getId());
+        boolean isNewTopScorer = existingTopScorer.isEmpty();
+
+        TopScorerPrediction prediction = existingTopScorer.orElseGet(() -> {
+            TopScorerPrediction p = new TopScorerPrediction();
+            p.setUser(user);
+            p.setDeadline(deadline);
+            return p;
+        });
 
         prediction.setPlayerName(playerName.trim());
         prediction.setTeam(team);
@@ -135,8 +138,18 @@ public class PredictionService {
         prediction.setPointsEarned(null);
 
         TopScorerPrediction saved = topScorerPredictionRepository.save(prediction);
-        emailService.sendTopScorerConfirmation(user, playerName.trim(), team);
+        if (isNewTopScorer) checkAndSendSpecialCompletionEmail(user);
         return saved;
+    }
+
+    private static final int TOTAL_GROUPS = 12;
+
+    private void checkAndSendSpecialCompletionEmail(User user) {
+        long groupCount = groupClassificationPredictionRepository.countByUserId(user.getId());
+        if (groupCount < TOTAL_GROUPS) return;
+        boolean hasTopScorer = topScorerPredictionRepository.findByUserId(user.getId()).isPresent();
+        if (!hasTopScorer) return;
+        emailService.sendSpecialPredictionsCompletionEmail(user);
     }
 
     public static class PredictionClosedException extends RuntimeException {

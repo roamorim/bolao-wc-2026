@@ -63,36 +63,17 @@ public class EmailService {
     }
 
     @Async
-    public void sendGroupClassificationConfirmation(User user, String groupName,
-            Team first, Team second, Team third, boolean thirdQualifies) {
-        log.info("[EMAIL] sendGroupClassificationConfirmation → {} grupo={} enabled={}", user.getUsername(), groupName, enabled);
+    public void sendSpecialPredictionsCompletionEmail(User user) {
+        log.info("[EMAIL] sendSpecialPredictionsCompletionEmail → {} ({}) enabled={}", user.getUsername(), user.getEmail(), enabled);
         if (!enabled) return;
-        String subject = "✅ Palpite salvo — Classificação Grupo " + groupName;
-        String thirdLine = third != null
-            ? "<li>3º lugar: <strong>" + third.getName() + "</strong>" +
-              (thirdQualifies ? " (avança como melhor 3º)" : "") + "</li>"
-            : "";
         String body = body(user.getDisplayName(),
-            "<p>Seu palpite para o <strong>Grupo " + groupName + "</strong> foi salvo:</p>" +
+            "<p>Você registrou todas as <strong>apostas especiais</strong>:</p>" +
             "<ul style='font-size:1.1rem'>" +
-            "<li>1º lugar: <strong>" + first.getName() + "</strong></li>" +
-            "<li>2º lugar: <strong>" + second.getName() + "</strong></li>" +
-            thirdLine +
-            "</ul>");
-        send(user.getEmail(), subject, body);
-    }
-
-    @Async
-    public void sendTopScorerConfirmation(User user, String playerName, Team team) {
-        log.info("[EMAIL] sendTopScorerConfirmation → {} artilheiro={} enabled={}", user.getUsername(), playerName, enabled);
-        if (!enabled) return;
-        String subject = "✅ Palpite salvo — Artilheiro";
-        String body = body(user.getDisplayName(),
-            "<p>Seu palpite de artilheiro foi salvo:</p>" +
-            "<p style='font-size:1.5rem;text-align:center'>" +
-            "<strong>" + playerName + "</strong><br/>" +
-            "<span style='color:#6c757d'>" + team.getName() + "</span></p>");
-        send(user.getEmail(), subject, body);
+            "<li>Classificação dos 12 grupos ✅</li>" +
+            "<li>Artilheiro do torneio ✅</li>" +
+            "</ul>" +
+            "<p>Boa sorte!</p>");
+        send(user.getEmail(), "✅ Apostas especiais completas — Bolão Copa 2026", body);
     }
 
     @Async
