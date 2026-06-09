@@ -177,7 +177,7 @@ public class SpecialPredictionsController {
             predictionService.saveTopScorer(user, player.getName(), player.getTeam().getId(), specialDeadline());
             redirectAttributes.addFlashAttribute("successMessage",
                 "Artilheiro salvo: " + player.getName() + " (" + player.getTeam().getName() + ")");
-        } catch (PredictionService.PredictionClosedException e) {
+        } catch (PredictionService.PredictionClosedException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 

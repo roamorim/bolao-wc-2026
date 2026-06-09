@@ -109,6 +109,18 @@ public class PredictionService {
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
 
+        if (isNewGroup) {
+            long newTotal = groupClassificationPredictionRepository.countByUserId(user.getId()) + 1;
+            boolean topScorerSaved = topScorerPredictionRepository.findByUserId(user.getId()).isPresent();
+            if (newTotal == TOTAL_GROUPS && topScorerSaved) {
+                long thirds = groupClassificationPredictionRepository
+                    .countByUserIdAndThirdQualifies(user.getId(), true)
+                    + (thirdQualifies ? 1 : 0);
+                if (thirds != 8) throw new IllegalArgumentException(
+                    "Para finalizar, exatamente 8 seleções de 3º lugar devem avançar como melhor terceiro. Você marcou " + thirds + ".");
+            }
+        }
+
         GroupClassificationPrediction saved = groupClassificationPredictionRepository.save(prediction);
         if (isNewGroup) checkAndSendSpecialCompletionEmail(user);
         return saved;
@@ -136,6 +148,16 @@ public class PredictionService {
         prediction.setTeam(team);
         prediction.setSubmittedAt(Instant.now());
         prediction.setPointsEarned(null);
+
+        if (isNewTopScorer) {
+            long groupCount = groupClassificationPredictionRepository.countByUserId(user.getId());
+            if (groupCount == TOTAL_GROUPS) {
+                long thirds = groupClassificationPredictionRepository
+                    .countByUserIdAndThirdQualifies(user.getId(), true);
+                if (thirds != 8) throw new IllegalArgumentException(
+                    "Para finalizar, exatamente 8 seleções de 3º lugar devem avançar como melhor terceiro. Você marcou " + thirds + ".");
+            }
+        }
 
         TopScorerPrediction saved = topScorerPredictionRepository.save(prediction);
         if (isNewTopScorer) checkAndSendSpecialCompletionEmail(user);
