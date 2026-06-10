@@ -15,8 +15,8 @@ import java.util.Map;
 @RequestMapping("/leaderboard")
 public class LeaderboardController {
 
-    private static final String WARM = "hsl(38,88%,79%)";
-    private static final String COOL = "hsl(64,88%,79%)";
+    private static final String WARM = "hsl(42,80%,86%)";
+    private static final String COOL = "hsl(56,80%,86%)";
 
     private static final Map<String, Integer> FINGERPRINT_MAP = Map.ofEntries(
         Map.entry("dguarana",  0),
