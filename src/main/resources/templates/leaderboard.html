@@ -27,7 +27,8 @@
                 </thead>
                 <tbody id="leaderboard-body" th:fragment="leaderboardTable">
                     <tr th:each="entry, stat : ${entries}"
-                        th:classappend="${stat.index == 0} ? 'table-warning fw-bold' : (${stat.index == 1} ? 'table-light' : '')">
+                        th:classappend="${stat.index == 0} ? (${fpRowColors != null} ? 'fw-bold' : 'table-warning fw-bold') : (${stat.index == 1 and fpRowColors == null} ? 'table-light' : '')"
+                        th:style="${stat.index < 4 and fpRowColors != null} ? 'background-color:' + ${fpRowColors[stat.index]} : ''">
                         <td class="text-center">
                             <span th:if="${stat.index == 0}">🥇</span>
                             <span th:if="${stat.index == 1}">🥈</span>
