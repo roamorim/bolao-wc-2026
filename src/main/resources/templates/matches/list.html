@@ -98,6 +98,7 @@
                     <th class="text-center">Sua aposta</th>
                     <th>Fora</th>
                     <th class="d-none d-md-table-cell text-muted fw-normal small">Data/hora</th>
+                    <th class="d-none d-md-table-cell text-muted fw-normal small">Fecha em</th>
                     <th class="text-center text-muted fw-normal small">Resultado</th>
                 </tr>
             </thead>
@@ -106,7 +107,7 @@
 
                     <!-- Header de fase -->
                     <tr class="table-success" x-show="mode==='fase'">
-                        <td colspan="6" class="fw-bold py-2">
+                        <td colspan="7" class="fw-bold py-2">
                             <i class="bi bi-trophy-fill me-1"></i>
                             <span th:text="${entry.key}">Fase</span>
                         </td>
@@ -148,8 +149,28 @@ function localizeTimes(root) {
         el.textContent = p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
     });
 }
+function localizeDeadlines(root) {
+    (root || document).querySelectorAll('.deadline-time[data-deadline-ms]').forEach(el => {
+        const ms = +el.dataset.deadlineMs - Date.now();
+        if (ms <= 0) { el.textContent = ''; return; }
+        const totalMin = Math.floor(ms / 60000);
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        const d = Math.floor(h / 24);
+        if (d >= 2)       el.textContent = d + ' dias';
+        else if (d === 1) el.textContent = '1 dia ' + (h % 24) + 'h';
+        else if (h > 0)   el.textContent = h + 'h ' + String(m).padStart(2, '0') + 'min';
+        else              el.textContent = m + 'min';
+        el.className = 'deadline-time ' + (h < 1 ? 'text-danger fw-semibold' : h < 6 ? 'text-warning' : 'text-muted');
+    });
+}
 localizeTimes();
-document.addEventListener('htmx:afterSwap', e => localizeTimes(e.detail.elt.parentElement));
+localizeDeadlines();
+setInterval(localizeDeadlines, 60000);
+document.addEventListener('htmx:afterSwap', e => {
+    localizeTimes(e.detail.elt.parentElement);
+    localizeDeadlines(e.detail.elt.parentElement);
+});
 </script>
 </body>
 </html>

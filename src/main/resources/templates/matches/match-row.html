@@ -83,6 +83,13 @@
               th:text="${#temporals.format(match.matchDatetime, 'dd/MM HH:mm')}">00/00 00:00</span>
     </td>
 
+    <!-- Fecha em (apenas jogos abertos) -->
+    <td class="d-none d-md-table-cell text-nowrap small">
+        <span th:if="${match.open}"
+              class="deadline-time"
+              th:data-deadline-ms="${match.predictionDeadline.toEpochMilli()}"></span>
+    </td>
+
     <!-- Resultado oficial + pontos ganhos -->
     <td class="text-center text-nowrap">
         <span th:if="${match.finished}" class="badge bg-secondary">
