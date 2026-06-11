@@ -17,6 +17,9 @@ public interface MatchPredictionRepository extends JpaRepository<MatchPrediction
 
     List<MatchPrediction> findByMatchId(Long matchId);
 
+    @Query("SELECT p FROM MatchPrediction p JOIN FETCH p.user WHERE p.match.id = :matchId")
+    List<MatchPrediction> findByMatchIdWithUser(@Param("matchId") Long matchId);
+
     @Query("SELECT p FROM MatchPrediction p JOIN FETCH p.match m JOIN FETCH m.homeTeam JOIN FETCH m.awayTeam WHERE p.user.id = :userId ORDER BY m.matchDatetime ASC")
     List<MatchPrediction> findByUserIdWithMatch(@Param("userId") Long userId);
 

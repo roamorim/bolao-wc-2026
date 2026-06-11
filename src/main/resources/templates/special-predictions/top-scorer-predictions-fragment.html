@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="topScorerPredictions">
+    <div th:if="${predictionsByPlayer.isEmpty()}" class="text-muted small text-center py-2">
+        <i class="bi bi-inbox"></i> Nenhum palpite registrado.
+    </div>
+
+    <div th:unless="${predictionsByPlayer.isEmpty()}">
+        <div th:each="entry : ${predictionsByPlayer}" class="mb-3">
+            <div class="fw-semibold small mb-1">
+                <i class="bi bi-person-fill me-1 text-warning"></i>
+                <span th:text="${entry.key}">Jogador (Seleção)</span>
+                <span class="badge bg-secondary ms-1" th:text="${entry.value.size()} + ' voto' + (${entry.value.size()} != 1 ? 's' : '')">1 voto</span>
+            </div>
+            <div class="ps-3">
+                <span th:each="p, iter : ${entry.value}">
+                    <span class="badge bg-light text-dark border me-1 mb-1 fw-normal">
+                        <span th:text="${p.user.displayName}">Nome</span>
+                        <span th:if="${p.pointsEarned != null}"
+                              class="ms-1 badge"
+                              th:classappend="${p.pointsEarned > 0 ? 'bg-success' : 'bg-secondary'}"
+                              th:text="${p.pointsEarned} + 'pts'">0pts</span>
+                    </span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

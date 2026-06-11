@@ -106,6 +106,17 @@
               class="badge bg-warning text-dark">
             <i class="bi bi-lock-fill"></i>
         </span>
+        <button th:if="${!match.open}"
+                type="button"
+                class="btn btn-sm btn-link p-0 ms-1 text-secondary align-middle"
+                title="Ver palpites de todos"
+                th:attr="hx-get=@{/matches/{id}/predictions(id=${match.id})}"
+                hx-target="#predictions-modal-body"
+                hx-swap="innerHTML"
+                data-bs-toggle="modal"
+                data-bs-target="#predictionsModal">
+            <i class="bi bi-people-fill"></i>
+        </button>
     </td>
 </tr>
 </body>

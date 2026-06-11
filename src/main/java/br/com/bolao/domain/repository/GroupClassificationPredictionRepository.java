@@ -15,6 +15,9 @@ public interface GroupClassificationPredictionRepository extends JpaRepository<G
 
     List<GroupClassificationPrediction> findByGroupName(String groupName);
 
+    @Query("SELECT p FROM GroupClassificationPrediction p JOIN FETCH p.user JOIN FETCH p.firstPlaceTeam JOIN FETCH p.secondPlaceTeam LEFT JOIN FETCH p.thirdPlaceTeam WHERE p.groupName = :groupName")
+    List<GroupClassificationPrediction> findByGroupNameWithUserAndTeams(@Param("groupName") String groupName);
+
     List<GroupClassificationPrediction> findByUserId(Long userId);
 
     long countByUserId(Long userId);

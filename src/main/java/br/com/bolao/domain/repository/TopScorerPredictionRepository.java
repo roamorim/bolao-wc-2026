@@ -16,6 +16,9 @@ public interface TopScorerPredictionRepository extends JpaRepository<TopScorerPr
     @Query("SELECT p.user.id FROM TopScorerPrediction p")
     List<Long> findAllUserIds();
 
+    @Query("SELECT p FROM TopScorerPrediction p JOIN FETCH p.user JOIN FETCH p.team")
+    List<TopScorerPrediction> findAllWithUserAndTeam();
+
     @Query("SELECT p FROM TopScorerPrediction p JOIN FETCH p.team WHERE p.user.id = :userId")
     Optional<TopScorerPrediction> findByUserIdWithTeam(@Param("userId") Long userId);
 

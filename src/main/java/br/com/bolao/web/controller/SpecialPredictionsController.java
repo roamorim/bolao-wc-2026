@@ -94,6 +94,45 @@ public class SpecialPredictionsController {
         return "special-predictions";
     }
 
+    @GetMapping("/top-scorer/all")
+    public String allTopScorerPredictions(Model model) {
+        Instant deadline = specialDeadline();
+        if (Instant.now().isBefore(deadline)) {
+            return "redirect:/special-predictions";
+        }
+        List<TopScorerPrediction> all = topScorerPredictionRepository.findAllWithUserAndTeam();
+        var byPlayer = all.stream()
+            .collect(Collectors.groupingBy(
+                p -> p.getPlayerName() + " (" + p.getTeam().getName() + ")",
+                java.util.LinkedHashMap::new,
+                Collectors.toList()
+            ));
+        var sorted = new java.util.LinkedHashMap<String, List<TopScorerPrediction>>();
+        byPlayer.entrySet().stream()
+            .sorted((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()))
+            .forEach(e -> {
+                e.getValue().sort(java.util.Comparator.comparing(p -> p.getUser().getDisplayName()));
+                sorted.put(e.getKey(), e.getValue());
+            });
+        model.addAttribute("predictionsByPlayer", sorted);
+        return "special-predictions/top-scorer-predictions-fragment :: topScorerPredictions";
+    }
+
+    @GetMapping("/group/{groupName}/all")
+    public String allGroupPredictions(@PathVariable String groupName, Model model) {
+        Instant deadline = specialDeadline();
+        if (Instant.now().isBefore(deadline)) {
+            return "redirect:/special-predictions";
+        }
+        List<GroupClassificationPrediction> predictions = predictionRepository.findByGroupNameWithUserAndTeams(groupName);
+        predictions.sort(java.util.Comparator
+            .comparing(GroupClassificationPrediction::getPointsEarned, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))
+            .thenComparing(p -> p.getUser().getDisplayName()));
+        model.addAttribute("groupName", groupName);
+        model.addAttribute("predictions", predictions);
+        return "special-predictions/group-predictions-fragment :: groupPredictions";
+    }
+
     @PostMapping("/group/{groupName}")
     public String saveGroup(
             @PathVariable String groupName,

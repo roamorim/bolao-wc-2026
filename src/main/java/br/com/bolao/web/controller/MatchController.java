@@ -107,6 +107,22 @@ public class MatchController {
         return "matches/detail";
     }
 
+    @GetMapping("/{id}/predictions")
+    public String matchPredictions(@PathVariable Long id, Model model) {
+        Match match = matchRepository.findByIdWithTeams(id)
+            .orElseThrow(() -> new IllegalArgumentException("Jogo não encontrado: " + id));
+        if (match.isOpen()) {
+            return "redirect:/matches";
+        }
+        List<MatchPrediction> predictions = matchPredictionRepository.findByMatchIdWithUser(id);
+        predictions.sort(java.util.Comparator
+            .comparing(MatchPrediction::getPointsEarned, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))
+            .thenComparing(p -> p.getUser().getDisplayName()));
+        model.addAttribute("match", match);
+        model.addAttribute("predictions", predictions);
+        return "matches/predictions-fragment :: predictionsTable";
+    }
+
     @PostMapping("/{id}/predict")
     public String submitPrediction(
             @PathVariable Long id,

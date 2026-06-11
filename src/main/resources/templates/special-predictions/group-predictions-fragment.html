@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="groupPredictions" class="mt-2 pt-2 border-top">
+    <p class="text-muted small mb-2 fw-semibold">
+        <i class="bi bi-people me-1"></i>Palpites — Grupo <span th:text="${groupName}">A</span>
+    </p>
+
+    <div th:if="${predictions.isEmpty()}" class="text-muted small text-center py-1">
+        <i class="bi bi-inbox"></i> Nenhum palpite registrado.
+    </div>
+
+    <div th:unless="${predictions.isEmpty()}" class="table-responsive">
+        <table class="table table-sm align-middle mb-0" style="font-size:.8rem">
+            <thead class="table-light">
+                <tr>
+                    <th>Participante</th>
+                    <th class="text-center">1º</th>
+                    <th class="text-center">2º</th>
+                    <th class="text-center">3º</th>
+                    <th class="text-center d-none d-sm-table-cell">Av.</th>
+                    <th class="text-center">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${predictions}">
+                    <td th:text="${p.user.displayName}">Nome</td>
+                    <td class="text-center" th:text="${p.firstPlaceTeam?.code}">COD</td>
+                    <td class="text-center" th:text="${p.secondPlaceTeam?.code}">COD</td>
+                    <td class="text-center" th:text="${p.thirdPlaceTeam?.code ?: '—'}">COD</td>
+                    <td class="text-center d-none d-sm-table-cell">
+                        <i th:if="${p.thirdQualifies}" class="bi bi-check-circle-fill text-success"></i>
+                        <i th:unless="${p.thirdQualifies}" class="bi bi-x-circle text-muted"></i>
+                    </td>
+                    <td class="text-center">
+                        <span th:if="${p.pointsEarned != null}"
+                              class="badge"
+                              th:classappend="${p.pointsEarned > 0 ? 'bg-success' : 'bg-light text-dark border'}"
+                              th:text="${p.pointsEarned} + 'pts'">0pts</span>
+                        <span th:if="${p.pointsEarned == null}" class="text-muted">—</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<body>
+<div th:fragment="predictionsTable">
+    <p class="text-muted small mb-2">
+        <span th:text="${match.homeTeam.name}">Casa</span>
+        &nbsp;×&nbsp;
+        <span th:text="${match.awayTeam.name}">Fora</span>
+        <span class="ms-2 text-muted">· Jogo <span th:text="${match.matchNumber}">1</span></span>
+    </p>
+
+    <div th:if="${predictions.isEmpty()}" class="text-center py-3 text-muted small">
+        <i class="bi bi-inbox"></i> Nenhum palpite registrado.
+    </div>
+
+    <div th:unless="${predictions.isEmpty()}" class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Participante</th>
+                    <th class="text-center">Palpite</th>
+                    <th class="text-center">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${predictions}">
+                    <td th:text="${p.user.displayName}">Nome</td>
+                    <td class="text-center fw-semibold">
+                        <span th:text="${p.homeScorePred} + ' × ' + ${p.awayScorePred}">0 × 0</span>
+                    </td>
+                    <td class="text-center">
+                        <span th:if="${p.pointsEarned != null}"
+                              class="badge"
+                              th:classappend="${p.pointsEarned > 0 ? 'bg-success' : 'bg-light text-dark border'}"
+                              th:text="${p.pointsEarned} + 'pts'">0pts</span>
+                        <span th:if="${p.pointsEarned == null}" class="text-muted">—</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
