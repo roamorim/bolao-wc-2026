@@ -41,6 +41,9 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     @Query("SELECT m FROM Match m JOIN FETCH m.stage LEFT JOIN FETCH m.homeTeam LEFT JOIN FETCH m.awayTeam WHERE m.stage.code != 'GROUP' ORDER BY m.stage.displayOrder ASC, m.matchNumber ASC")
     List<Match> findAllKnockoutMatchesWithStage();
 
+    @Query("SELECT m FROM Match m JOIN FETCH m.stage JOIN FETCH m.homeTeam JOIN FETCH m.awayTeam WHERE m.status = :status AND m.matchDatetime < :cutoff")
+    List<Match> findLockedMatchesPastCutoff(@Param("status") MatchStatus status, @Param("cutoff") Instant cutoff);
+
     @Modifying
     @Query(value = "UPDATE matches SET home_score = NULL, away_score = NULL, status = 'SCHEDULED' WHERE status != 'SCHEDULED'", nativeQuery = true)
     int resetAllResults();
