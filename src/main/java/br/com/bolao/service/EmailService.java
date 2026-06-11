@@ -89,6 +89,21 @@ public class EmailService {
         send(user.getEmail(), subject, body);
     }
 
+    @Async
+    public void sendPasswordResetEmail(String displayName, String email, String resetLink) {
+        log.info("[EMAIL] sendPasswordResetEmail → {} ({}) enabled={}", displayName, email, enabled);
+        if (!enabled) return;
+        String body = body(displayName,
+            "<p>Recebemos uma solicitação para redefinir a senha da sua conta.</p>" +
+            "<p style='text-align:center;margin:24px 0'>" +
+            "<a href='" + resetLink + "' style='background:#198754;color:#fff;padding:12px 24px;" +
+            "border-radius:6px;text-decoration:none;font-weight:bold'>Redefinir minha senha</a>" +
+            "</p>" +
+            "<p style='font-size:0.85rem;color:#6c757d'>O link expira em 1 hora. " +
+            "Se você não solicitou a redefinição, ignore este e-mail.</p>");
+        send(email, "🔐 Redefinição de senha — Bolão Copa 2026", body);
+    }
+
     private void send(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

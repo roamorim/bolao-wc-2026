@@ -28,6 +28,7 @@ public class PasswordChangeInterceptor implements HandlerInterceptor {
 
         String path = request.getRequestURI();
         if (path.startsWith("/alterar-senha") || path.startsWith("/logout")
+                || path.startsWith("/esqueci-senha") || path.startsWith("/redefinir-senha")
                 || path.startsWith("/css") || path.startsWith("/js")
                 || path.startsWith("/images") || path.startsWith("/favicon")) {
             return true;
