@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -32,7 +34,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // Store CSRF token in a cookie instead of the session so it survives
+        // session expiry (avoids 403 loop on mobile when JSESSIONID is lost)
+        CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepo.setCookiePath("/");
+
         http
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(csrfRepo)
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 .requestMatchers("/login", "/error", "/pontuacao", "/esqueci-senha", "/redefinir-senha").permitAll()
