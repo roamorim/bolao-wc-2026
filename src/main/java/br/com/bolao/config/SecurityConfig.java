@@ -54,6 +54,10 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .maximumSessions(5)
                 .maxSessionsPreventsLogin(false)
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedHandler((request, response, e) ->
+                    response.sendRedirect(request.getContextPath() + "/login?expired"))
             );
 
         return http.build();
