@@ -70,26 +70,32 @@ public class MatchResultFetcherScheduler {
         String homeTla = match.getHomeTeam().getCode();
         String awayTla = match.getAwayTeam().getCode();
 
-        apiMatches.stream()
-                .filter(FdMatch::isFinished)
-                .filter(api -> homeTla.equalsIgnoreCase(tla(api.homeTeam()))
-                        && awayTla.equalsIgnoreCase(tla(api.awayTeam())))
-                .findFirst()
-                .ifPresentOrElse(
-                        api -> applyResult(match, api),
-                        () -> log.debug("No finished result yet for match #{} ({} vs {})",
-                                match.getMatchNumber(), homeTla, awayTla));
+        for (FdMatch api : apiMatches) {
+            if (!api.isFinished()) continue;
+            String apiHome = tla(api.homeTeam());
+            String apiAway = tla(api.awayTeam());
+
+            boolean straight  = homeTla.equalsIgnoreCase(apiHome) && awayTla.equalsIgnoreCase(apiAway);
+            boolean flipped   = homeTla.equalsIgnoreCase(apiAway) && awayTla.equalsIgnoreCase(apiHome);
+
+            if (straight || flipped) {
+                applyResult(match, api, flipped);
+                return;
+            }
+        }
+        log.debug("No finished result yet for match #{} ({} vs {})", match.getMatchNumber(), homeTla, awayTla);
     }
 
-    private void applyResult(Match match, FdMatch api) {
+    private void applyResult(Match match, FdMatch api, boolean flipped) {
         if (api.score() == null || api.score().fullTime() == null
                 || api.score().fullTime().home() == null || api.score().fullTime().away() == null) {
             log.warn("Match #{} reported FINISHED but score is incomplete in API response", match.getMatchNumber());
             return;
         }
 
-        int home = api.score().fullTime().home();
-        int away = api.score().fullTime().away();
+        // When home/away is inverted in the API, swap the scores to match our DB assignment
+        int home = flipped ? api.score().fullTime().away() : api.score().fullTime().home();
+        int away = flipped ? api.score().fullTime().home() : api.score().fullTime().away();
 
         try {
             tournamentAdminService.submitMatchResult(match.getId(), new MatchResultRequest(home, away));
