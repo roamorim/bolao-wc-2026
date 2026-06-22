@@ -2,6 +2,7 @@ package br.com.bolao.config;
 
 import br.com.bolao.service.UserDetailsServiceImpl;
 import br.com.bolao.web.handler.LoginSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +24,12 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final LoginSuccessHandler loginSuccessHandler;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${bolao.security.remember-me-key}")
+    private String rememberMeKey;
+
+    @Value("${bolao.security.remember-me-validity-seconds}")
+    private int rememberMeValiditySeconds;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
                           LoginSuccessHandler loginSuccessHandler,
@@ -61,6 +68,11 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/login?logout")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
+            )
+            .rememberMe(rm -> rm
+                .key(rememberMeKey)
+                .tokenValiditySeconds(rememberMeValiditySeconds)
+                .userDetailsService(userDetailsService)
             )
             .sessionManagement(session -> session
                 .maximumSessions(5)
