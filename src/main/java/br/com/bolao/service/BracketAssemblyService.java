@@ -1,16 +1,22 @@
 package br.com.bolao.service;
 
 import br.com.bolao.domain.enums.MatchStatus;
+import br.com.bolao.domain.model.BracketPick;
 import br.com.bolao.domain.model.GroupResult;
 import br.com.bolao.domain.model.Match;
 import br.com.bolao.domain.model.Team;
+import br.com.bolao.domain.model.User;
+import br.com.bolao.domain.repository.BracketPickRepository;
 import br.com.bolao.domain.repository.GroupResultRepository;
 import br.com.bolao.domain.repository.MatchRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,15 +45,20 @@ public class BracketAssemblyService {
 
     // Next-stage bracket progression: matchNumber → {homeSourceMatch, awaySourceMatch}
     // Negative values indicate "loser of match N" (used for 3rd-place match 103)
+    // R32→R16 pairings follow the official wall chart (two independent halves,
+    // 73/75/76/78/81/82/83/84 on one side and 74/77/79/80/85/86/87/88 on the
+    // other, so they only meet again in the final) — confirmed against the
+    // official bracket image, since the naive "73×74, 75×76, ..." sequential
+    // pairing does not match it.
     private static final Map<Integer, int[]> PROGRESSION = Map.ofEntries(
-        Map.entry(89,  new int[]{73, 74}),
-        Map.entry(90,  new int[]{75, 76}),
-        Map.entry(91,  new int[]{77, 78}),
-        Map.entry(92,  new int[]{79, 80}),
-        Map.entry(93,  new int[]{81, 82}),
-        Map.entry(94,  new int[]{83, 84}),
-        Map.entry(95,  new int[]{85, 86}),
-        Map.entry(96,  new int[]{87, 88}),
+        Map.entry(89,  new int[]{75, 78}),
+        Map.entry(90,  new int[]{73, 76}),
+        Map.entry(91,  new int[]{84, 83}),
+        Map.entry(92,  new int[]{82, 81}),
+        Map.entry(93,  new int[]{74, 77}),
+        Map.entry(94,  new int[]{79, 80}),
+        Map.entry(95,  new int[]{87, 86}),
+        Map.entry(96,  new int[]{85, 88}),
         Map.entry(97,  new int[]{89, 90}),
         Map.entry(98,  new int[]{91, 92}),
         Map.entry(99,  new int[]{93, 94}),
@@ -67,11 +78,151 @@ public class BracketAssemblyService {
 
     private final GroupResultRepository groupResultRepository;
     private final MatchRepository matchRepository;
+    private final BracketPickRepository bracketPickRepository;
 
     public BracketAssemblyService(GroupResultRepository groupResultRepository,
-                                  MatchRepository matchRepository) {
+                                  MatchRepository matchRepository,
+                                  BracketPickRepository bracketPickRepository) {
         this.groupResultRepository = groupResultRepository;
         this.matchRepository = matchRepository;
+        this.bracketPickRepository = bracketPickRepository;
+    }
+
+    public record ProjectedTeams(Team home, Team away) {}
+
+    /**
+     * Times de cada jogo do mata-mata como o usuário os vê: o time real quando já
+     * definido (R32, ou rodadas seguintes após resultado real), senão o time que o
+     * próprio usuário escolheu nos jogos anteriores (bracket "completo" preenchido
+     * de uma vez, antes do início do mata-mata).
+     */
+    public Map<Integer, ProjectedTeams> projectForUser(Long userId) {
+        List<Match> knockoutMatches = matchRepository.findAllKnockoutMatchesWithStage();
+        Map<Integer, Match> byNumber = knockoutMatches.stream()
+            .collect(Collectors.toMap(Match::getMatchNumber, m -> m));
+
+        Map<Long, Team> pickedWinnerByMatchId = bracketPickRepository.findByUserIdWithDetails(userId).stream()
+            .filter(p -> p.getPredictedWinner() != null)
+            .collect(Collectors.toMap(p -> p.getMatch().getId(), BracketPick::getPredictedWinner));
+
+        Map<Integer, ProjectedTeams> projected = new TreeMap<>();
+        knockoutMatches.stream()
+            .sorted(Comparator.comparingInt(Match::getMatchNumber))
+            .forEach(m -> {
+                if (m.getHomeTeam() != null && m.getAwayTeam() != null) {
+                    projected.put(m.getMatchNumber(), new ProjectedTeams(m.getHomeTeam(), m.getAwayTeam()));
+                    return;
+                }
+                int[] sources = PROGRESSION.get(m.getMatchNumber());
+                if (sources == null) {
+                    projected.put(m.getMatchNumber(), new ProjectedTeams(null, null));
+                    return;
+                }
+                Team home = resolveProjected(sources[0], byNumber, projected, pickedWinnerByMatchId);
+                Team away = resolveProjected(sources[1], byNumber, projected, pickedWinnerByMatchId);
+                projected.put(m.getMatchNumber(), new ProjectedTeams(home, away));
+            });
+        return projected;
+    }
+
+    public Map<Integer, int[]> getProgressionMap() {
+        return PROGRESSION;
+    }
+
+    /**
+     * Salva todos os palpites enviados de uma vez (bracket completo preenchido no
+     * cliente). Processa em ordem de match_number para que o palpite de um jogo já
+     * esteja disponível ao validar/projetar os jogos seguintes que dependem dele.
+     * Lança IllegalStateException no primeiro palpite inválido, abortando a
+     * transação inteira (o cliente já só deveria enviar combinações válidas).
+     */
+    @Transactional
+    public int saveAllPicks(User user, Map<Integer, Long> winnerTeamIdByMatchNumber) {
+        List<Match> knockoutMatches = matchRepository.findAllKnockoutMatchesWithStage();
+        Map<Integer, Match> byNumber = knockoutMatches.stream()
+            .collect(Collectors.toMap(Match::getMatchNumber, m -> m));
+
+        List<BracketPick> existingPicks = bracketPickRepository.findByUserIdWithDetails(user.getId());
+        Map<Long, Team> pickedWinnerByMatchId = existingPicks.stream()
+            .filter(p -> p.getPredictedWinner() != null)
+            .collect(Collectors.toMap(p -> p.getMatch().getId(), BracketPick::getPredictedWinner));
+        Map<Long, BracketPick> existingPickByMatchId = existingPicks.stream()
+            .collect(Collectors.toMap(p -> p.getMatch().getId(), p -> p));
+
+        Map<Integer, ProjectedTeams> projectedCache = new TreeMap<>();
+        int saved = 0;
+
+        for (Match m : knockoutMatches.stream().sorted(Comparator.comparingInt(Match::getMatchNumber)).toList()) {
+            int number = m.getMatchNumber();
+            ProjectedTeams proj;
+            if (m.getHomeTeam() != null && m.getAwayTeam() != null) {
+                proj = new ProjectedTeams(m.getHomeTeam(), m.getAwayTeam());
+            } else {
+                int[] sources = PROGRESSION.get(number);
+                Team home = sources == null ? null : resolveProjected(sources[0], byNumber, projectedCache, pickedWinnerByMatchId);
+                Team away = sources == null ? null : resolveProjected(sources[1], byNumber, projectedCache, pickedWinnerByMatchId);
+                proj = new ProjectedTeams(home, away);
+            }
+            projectedCache.put(number, proj);
+
+            Long winnerId = winnerTeamIdByMatchNumber.get(number);
+            if (winnerId == null) continue;
+            if (m.isFinished()) continue;
+            if (Instant.now().isAfter(m.getPredictionDeadline())) {
+                throw new IllegalStateException("Prazo encerrado para o jogo " + number + ".");
+            }
+            if (proj.home() == null || proj.away() == null) {
+                throw new IllegalStateException("Jogo " + number + " ainda não pode ser apostado — falta escolher o(s) jogo(s) anterior(es).");
+            }
+            Team winner;
+            if (winnerId.equals(proj.home().getId())) {
+                winner = proj.home();
+            } else if (winnerId.equals(proj.away().getId())) {
+                winner = proj.away();
+            } else {
+                throw new IllegalStateException("Time inválido para o jogo " + number + ".");
+            }
+
+            BracketPick pick = existingPickByMatchId.get(m.getId());
+            if (pick == null) {
+                pick = new BracketPick();
+                pick.setUser(user);
+                pick.setMatch(m);
+            }
+            pick.setPredictedWinner(winner);
+            pick.setSubmittedAt(Instant.now());
+            pick.setPointsEarned(null);
+            bracketPickRepository.save(pick);
+
+            pickedWinnerByMatchId.put(m.getId(), winner);
+            saved++;
+        }
+        return saved;
+    }
+
+    private Team resolveProjected(int signedSourceNumber,
+                                   Map<Integer, Match> byNumber,
+                                   Map<Integer, ProjectedTeams> resolvedSoFar,
+                                   Map<Long, Team> pickedWinnerByMatchId) {
+        boolean wantLoser = signedSourceNumber < 0;
+        Match source = byNumber.get(Math.abs(signedSourceNumber));
+        if (source == null) return null;
+
+        if (source.getHomeScore() != null && source.getAwayScore() != null) {
+            Team winner = winner(source);
+            Team loser = loser(source);
+            return wantLoser ? loser : winner;
+        }
+
+        Team picked = pickedWinnerByMatchId.get(source.getId());
+        if (picked == null) return null;
+        if (!wantLoser) return picked;
+
+        ProjectedTeams sourceProjected = resolvedSoFar.get(source.getMatchNumber());
+        if (sourceProjected == null || sourceProjected.home() == null || sourceProjected.away() == null) return null;
+        if (picked.getId().equals(sourceProjected.home().getId())) return sourceProjected.away();
+        if (picked.getId().equals(sourceProjected.away().getId())) return sourceProjected.home();
+        return null;
     }
 
     public boolean isAllGroupResultsIn() {

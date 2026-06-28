@@ -6,119 +6,306 @@
 <nav th:replace="~{fragments/layout :: navbar}"></nav>
 <div th:replace="~{fragments/layout :: alerts}"></div>
 
-<div class="container py-4">
-    <h4 class="fw-bold mb-1"><i class="bi bi-diagram-3"></i> Mata-mata — Bracket Picker</h4>
-    <p class="text-muted small mb-4">Escolha o vencedor de cada jogo. Cada acerto vale pontos no ranking.</p>
+<div class="container py-4" style="padding-bottom:90px"
+     x-data="bracketApp(_matches, _progression, _csrfToken, _csrfHeader)">
 
-    <!-- Bracket not ready -->
-    <div th:unless="${bracketReady}" class="alert alert-warning">
-        <i class="bi bi-hourglass-split me-2"></i>
-        <strong>Bracket ainda não definido.</strong>
-        As apostas do mata-mata abrirão quando todos os classificados da fase de grupos forem registrados pelo admin.
+    <!-- Bracket not ready: maintenance page -->
+    <div th:unless="${bracketReady}" class="d-flex flex-column align-items-center justify-content-center text-center py-5 my-4">
+        <i class="bi bi-cone-striped text-warning" style="font-size:4rem"></i>
+        <h3 class="fw-bold mt-3">Em manutenção</h3>
+        <p class="text-muted mb-0" style="max-width:480px">
+            Estamos montando as chaves do mata-mata com os classificados da fase de grupos.
+        </p>
+        <p class="text-muted" style="max-width:480px">
+            Em alguns minutos você já vai poder registrar suas apostas aqui. 🏆
+        </p>
     </div>
 
     <!-- Bracket ready: stages -->
     <div th:if="${bracketReady}">
-        <div th:each="section : ${sections}" class="mb-5">
-            <h5 class="fw-bold border-bottom pb-2 mb-3" th:text="${section.name}">Fase</h5>
+        <h4 class="fw-bold mb-1"><i class="bi bi-diagram-3"></i> Mata-mata — Bracket Picker</h4>
+        <p class="text-muted small mb-4">
+            Escolha o vencedor de cada jogo. Suas escolhas ficam só no seu navegador até você clicar em "Salvar palpites".
+        </p>
+
+        <template x-for="stage in stages()" :key="stage.code">
+        <div class="mb-5">
+            <h5 class="fw-bold border-bottom pb-2 mb-3" x-text="stage.name"></h5>
 
             <div class="row g-3">
-                <div class="col-12 col-md-6 col-xl-4" th:each="row : ${section.rows}">
+                <template x-for="m in stage.matches" :key="m.number">
+                <div class="col-12 col-md-6 col-xl-4">
                     <div class="card h-100"
-                         th:classappend="${row.match.finished ? ' border-secondary' : (row.pick != null ? ' border-primary' : '')}">
+                         :class="m.finished ? 'border-secondary' : (picks[m.number] ? ' border-primary' : '')">
                         <div class="card-header py-2 d-flex justify-content-between align-items-center"
-                             th:classappend="${row.match.finished ? ' bg-secondary text-white' : (row.pick != null ? ' bg-primary text-white' : ' bg-light')}">
-                            <span class="small fw-semibold">Jogo <span th:text="${row.match.matchNumber}"></span></span>
-                            <span th:if="${row.match.finished and row.pick != null}" class="small">
-                                <span th:if="${row.pick.pointsEarned != null and row.pick.pointsEarned > 0}"
-                                      class="badge bg-success">
-                                    +<span th:text="${row.pick.pointsEarned}"></span> pts
+                             :class="m.finished ? 'bg-secondary text-white' : (picks[m.number] ? 'bg-primary text-white' : 'bg-light')">
+                            <span class="small fw-semibold">Jogo <span x-text="m.number"></span></span>
+
+                            <span x-show="m.finished && picks[m.number]" class="small">
+                                <span x-show="m.pointsEarned > 0" class="badge bg-success">
+                                    +<span x-text="m.pointsEarned"></span> pts
                                 </span>
-                                <span th:if="${row.pick.pointsEarned != null and row.pick.pointsEarned == 0}"
-                                      class="badge bg-danger">Errou</span>
+                                <span x-show="m.pointsEarned === 0" class="badge bg-danger">Errou</span>
                             </span>
-                            <span th:if="${row.pick != null and !row.match.finished}"
-                                  class="badge bg-white text-primary small">Apostado</span>
+
+                            <span x-show="!m.finished && isSaved(m.number)" class="badge bg-white text-primary small">
+                                <i class="bi bi-check-circle"></i> Salvo
+                            </span>
+                            <span x-show="!m.finished && isPending(m.number)" class="badge bg-warning text-dark small">
+                                Não salvo
+                            </span>
                         </div>
 
                         <div class="card-body p-3">
                             <!-- Teams -->
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="text-center" style="flex:1">
-                                    <span th:if="${row.match.homeTeam?.flagCode != null}"
-                                          class="fi"
-                                          th:classappend="${'fi-' + row.match.homeTeam.flagCode}"
+                                    <span class="fi" :class="'fi-' + (projected(m.number).home ? projected(m.number).home.flagCode : '')"
+                                          x-show="projected(m.number).home && projected(m.number).home.flagCode"
                                           style="font-size:1.5rem"></span>
-                                    <div class="fw-semibold small mt-1" th:text="${row.match.homeTeam?.name ?: 'A definir'}"></div>
+                                    <div class="fw-semibold small mt-1" x-text="projected(m.number).home ? projected(m.number).home.name : 'A definir'"></div>
                                 </div>
                                 <div class="text-muted fw-bold px-2">
-                                    <span th:if="${row.match.finished}"
-                                          th:text="${row.match.homeScore} + ' × ' + ${row.match.awayScore}"
-                                          class="fs-5"></span>
-                                    <span th:unless="${row.match.finished}" class="text-muted">×</span>
+                                    <span x-show="m.finished" x-text="m.homeScore + ' × ' + m.awayScore" class="fs-5"></span>
+                                    <span x-show="!m.finished" class="text-muted">×</span>
                                 </div>
                                 <div class="text-center" style="flex:1">
-                                    <span th:if="${row.match.awayTeam?.flagCode != null}"
-                                          class="fi"
-                                          th:classappend="${'fi-' + row.match.awayTeam.flagCode}"
+                                    <span class="fi" :class="'fi-' + (projected(m.number).away ? projected(m.number).away.flagCode : '')"
+                                          x-show="projected(m.number).away && projected(m.number).away.flagCode"
                                           style="font-size:1.5rem"></span>
-                                    <div class="fw-semibold small mt-1" th:text="${row.match.awayTeam?.name ?: 'A definir'}"></div>
+                                    <div class="fw-semibold small mt-1" x-text="projected(m.number).away ? projected(m.number).away.name : 'A definir'"></div>
                                 </div>
                             </div>
 
                             <!-- Finished: show winner -->
-                            <div th:if="${row.match.finished}" class="text-center text-muted small">
-                                <span th:if="${row.pick != null}">
-                                    Você apostou: <strong th:text="${row.pick.predictedWinner?.name}"></strong>
+                            <div x-show="m.finished" class="text-center text-muted small">
+                                <span x-show="picks[m.number]">
+                                    Você apostou: <strong x-text="pickedTeamName(m.number)"></strong>
                                 </span>
-                                <span th:unless="${row.pick != null}" class="fst-italic">Sem aposta</span>
+                                <span x-show="!picks[m.number]" class="fst-italic">Sem aposta</span>
                             </div>
 
                             <!-- Can pick: show buttons -->
-                            <div th:if="${row.canPick}">
+                            <div x-show="!m.finished && canPick(m.number)">
                                 <p class="text-muted small mb-2 text-center">Quem vai vencer?</p>
                                 <div class="d-flex gap-2">
-                                    <form th:action="@{/bracket/{id}/pick(id=${row.match.id})}" method="post" class="flex-fill">
-                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                        <input type="hidden" name="winnerId" th:value="${row.match.homeTeam.id}"/>
-                                        <button type="submit"
-                                                th:classappend="${row.pick != null and row.pick.predictedWinner != null and row.pick.predictedWinner.id == row.match.homeTeam.id ? ' active' : ''}"
-                                                class="btn btn-outline-primary btn-sm w-100"
-                                                th:text="${row.match.homeTeam.name}">Casa</button>
-                                    </form>
-                                    <form th:action="@{/bracket/{id}/pick(id=${row.match.id})}" method="post" class="flex-fill">
-                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                        <input type="hidden" name="winnerId" th:value="${row.match.awayTeam.id}"/>
-                                        <button type="submit"
-                                                th:classappend="${row.pick != null and row.pick.predictedWinner != null and row.pick.predictedWinner.id == row.match.awayTeam.id ? ' active' : ''}"
-                                                class="btn btn-outline-primary btn-sm w-100"
-                                                th:text="${row.match.awayTeam.name}">Fora</button>
-                                    </form>
+                                    <button type="button"
+                                            @click="select(m.number, projected(m.number).home.id)"
+                                            :class="isSelected(m.number, projected(m.number).home) ? 'btn-primary' : 'btn-outline-primary'"
+                                            class="btn btn-sm w-100 flex-fill"
+                                            x-text="projected(m.number).home ? projected(m.number).home.name : ''"></button>
+                                    <button type="button"
+                                            @click="select(m.number, projected(m.number).away.id)"
+                                            :class="isSelected(m.number, projected(m.number).away) ? 'btn-primary' : 'btn-outline-primary'"
+                                            class="btn btn-sm w-100 flex-fill"
+                                            x-text="projected(m.number).away ? projected(m.number).away.name : ''"></button>
                                 </div>
                             </div>
 
                             <!-- Deadline passed, not finished, no pick -->
-                            <div th:if="${!row.canPick and !row.match.finished and row.pick == null}"
+                            <div x-show="!m.finished && !canPick(m.number) && deadlinePassed && !picks[m.number]"
                                  class="text-center text-muted small fst-italic">
                                 Prazo encerrado — sem aposta registrada
                             </div>
 
                             <!-- Waiting for previous round -->
-                            <div th:if="${!row.canPick and !row.match.finished and (row.match.homeTeam == null or row.match.awayTeam == null)}"
+                            <div x-show="!m.finished && !canPick(m.number) && !deadlinePassed && (!projected(m.number).home || !projected(m.number).away)"
                                  class="text-center text-muted small fst-italic">
-                                Aguardando resultado da fase anterior
+                                Escolha primeiro o(s) jogo(s) anterior(es)
                             </div>
                         </div>
 
-                        <div class="card-footer py-1 text-muted small"
-                             th:text="${#temporals.format(row.match.matchDatetime, 'dd/MM HH:mm')} + ' UTC'"></div>
+                        <div class="card-footer py-1 text-muted small" x-text="formatDate(m.matchDatetimeMs) + ' UTC'"></div>
                     </div>
                 </div>
+                </template>
+            </div>
+        </div>
+        </template>
+
+        <!-- Barra fixa de salvar -->
+        <div class="fixed-bottom bg-white border-top shadow-lg py-2">
+            <div class="container d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="small">
+                    <strong x-text="pickedCount()"></strong> de <strong x-text="totalCount()"></strong> jogos escolhidos
+                    <span x-show="missingCount() > 0" class="text-warning ms-1">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        faltam <span x-text="missingCount()"></span>
+                    </span>
+                    <span x-show="missingCount() === 0" class="text-success ms-1">
+                        <i class="bi bi-check-circle-fill"></i> chave completa
+                    </span>
+                </div>
+                <button type="button" class="btn btn-success" @click="saveAll()" :disabled="saving || pickedCount() === 0">
+                    <span x-show="!saving"><i class="bi bi-floppy me-1"></i> Salvar palpites</span>
+                    <span x-show="saving">Salvando...</span>
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    const _matches = /*[[${matches}]]*/ [];
+    const _progression = /*[[${progression}]]*/ {};
+    const _csrfToken = /*[[${_csrf.token}]]*/ '';
+    const _csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+
+    const STAGE_ORDER = ['R32', 'R16', 'QF', 'SEMI', 'SF', 'FINAL'];
+
+    function bracketApp(matches, progression, csrfToken, csrfHeader) {
+        return {
+            matches: matches,
+            progression: progression,
+            csrfToken: csrfToken,
+            csrfHeader: csrfHeader,
+            picks: {},
+            saving: false,
+            deadlinePassed: false,
+
+            init() {
+                this.matches.forEach(m => {
+                    if (m.myPickTeamId) this.picks[m.number] = m.myPickTeamId;
+                });
+                const now = Date.now();
+                this.deadlinePassed = this.matches.length > 0 && now > Math.min(...this.matches.map(m => m.deadlineMs));
+            },
+
+            matchByNumber(n) {
+                return this.matches.find(m => m.number === n);
+            },
+
+            stages() {
+                return STAGE_ORDER
+                    .map(code => {
+                        const ms = this.matches.filter(m => m.stageCode === code);
+                        if (ms.length === 0) return null;
+                        return { code: code, name: ms[0].stageName, matches: ms };
+                    })
+                    .filter(s => s !== null);
+            },
+
+            projected(number) {
+                const m = this.matchByNumber(number);
+                if (!m) return { home: null, away: null };
+                if (m.homeTeam && m.awayTeam) return { home: m.homeTeam, away: m.awayTeam };
+                const sources = this.progression[number];
+                if (!sources) return { home: null, away: null };
+                return { home: this.resolveTeam(sources[0]), away: this.resolveTeam(sources[1]) };
+            },
+
+            resolveTeam(signedNumber) {
+                const wantLoser = signedNumber < 0;
+                const number = Math.abs(signedNumber);
+                const m = this.matchByNumber(number);
+                if (!m) return null;
+
+                if (m.finished && m.homeScore !== null && m.awayScore !== null) {
+                    const homeWon = m.homeScore > m.awayScore;
+                    const winner = homeWon ? m.homeTeam : m.awayTeam;
+                    const loser = homeWon ? m.awayTeam : m.homeTeam;
+                    return wantLoser ? loser : winner;
+                }
+
+                const pickedId = this.picks[number];
+                if (!pickedId) return null;
+                const proj = this.projected(number);
+                if (!proj.home || !proj.away) return null;
+                if (wantLoser) {
+                    if (proj.home.id === pickedId) return proj.away;
+                    if (proj.away.id === pickedId) return proj.home;
+                    return null;
+                }
+                if (proj.home.id === pickedId) return proj.home;
+                if (proj.away.id === pickedId) return proj.away;
+                return null;
+            },
+
+            canPick(number) {
+                if (this.deadlinePassed) return false;
+                const m = this.matchByNumber(number);
+                if (!m || m.finished) return false;
+                const proj = this.projected(number);
+                return !!(proj.home && proj.away);
+            },
+
+            select(number, teamId) {
+                if (!this.canPick(number) || !teamId) return;
+                this.picks[number] = teamId;
+            },
+
+            isSelected(number, team) {
+                return !!team && this.picks[number] === team.id;
+            },
+
+            pickedTeamName(number) {
+                const id = this.picks[number];
+                const proj = this.projected(number);
+                if (proj.home && proj.home.id === id) return proj.home.name;
+                if (proj.away && proj.away.id === id) return proj.away.name;
+                return '';
+            },
+
+            isSaved(number) {
+                const m = this.matchByNumber(number);
+                return !!(m && m.myPickTeamId && this.picks[number] === m.myPickTeamId);
+            },
+
+            isPending(number) {
+                const m = this.matchByNumber(number);
+                return !!this.picks[number] && !(m && m.myPickTeamId === this.picks[number]);
+            },
+
+            totalCount() {
+                return this.matches.length;
+            },
+
+            pickedCount() {
+                return Object.keys(this.picks).length;
+            },
+
+            missingCount() {
+                return this.totalCount() - this.pickedCount();
+            },
+
+            formatDate(ms) {
+                const d = new Date(ms);
+                const p = n => String(n).padStart(2, '0');
+                return p(d.getUTCDate()) + '/' + p(d.getUTCMonth() + 1) + ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes());
+            },
+
+            async saveAll() {
+                if (this.missingCount() > 0) {
+                    const ok = confirm(
+                        'Faltam ' + this.missingCount() + ' palpite(s) até a Final. Salvar apenas os ' +
+                        this.pickedCount() + ' que você já escolheu?'
+                    );
+                    if (!ok) return;
+                }
+                this.saving = true;
+                try {
+                    const headers = { 'Content-Type': 'application/json' };
+                    headers[this.csrfHeader] = this.csrfToken;
+                    const res = await fetch('/bracket/save-all', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(this.picks)
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || 'Erro ao salvar os palpites.');
+                        return;
+                    }
+                    location.reload();
+                } catch (e) {
+                    alert('Erro de rede ao salvar os palpites.');
+                } finally {
+                    this.saving = false;
+                }
+            }
+        };
+    }
+</script>
 </body>
 </html>
