@@ -15,6 +15,9 @@ public interface BracketPickRepository extends JpaRepository<BracketPick, Long> 
     @Query("SELECT p FROM BracketPick p JOIN FETCH p.match m JOIN FETCH m.stage LEFT JOIN FETCH m.homeTeam LEFT JOIN FETCH m.awayTeam LEFT JOIN FETCH p.predictedWinner WHERE p.user.id = :userId ORDER BY m.matchNumber ASC")
     List<BracketPick> findByUserIdWithDetails(@Param("userId") Long userId);
 
+    @Query("SELECT p FROM BracketPick p JOIN FETCH p.user JOIN FETCH p.match LEFT JOIN FETCH p.predictedWinner")
+    List<BracketPick> findAllWithUserAndWinner();
+
     @Query("SELECT COUNT(p) FROM BracketPick p WHERE p.user.id = :userId")
     long countByUserId(@Param("userId") Long userId);
 

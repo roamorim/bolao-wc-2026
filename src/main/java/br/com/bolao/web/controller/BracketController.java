@@ -64,6 +64,9 @@ public class BracketController {
         }
     }
 
+    public record OtherPickDto(String teamName, Integer pointsEarned) {}
+    public record UserBracketDto(String displayName, Map<Integer, OtherPickDto> picks) {}
+
     @GetMapping
     public String page(@AuthenticationPrincipal UserDetails principal, Model model) {
         User user = userService.findByUsername(principal.getUsername());
@@ -79,10 +82,31 @@ public class BracketController {
             .map(m -> MatchDto.from(m, pickByMatchId.get(m.getId())))
             .toList();
 
+        boolean deadlinePassed = knockoutMatches.stream()
+            .map(Match::getPredictionDeadline)
+            .min(Comparator.naturalOrder())
+            .map(d -> java.time.Instant.now().isAfter(d))
+            .orElse(false);
+
         model.addAttribute("bracketReady", bracketReady);
         model.addAttribute("matches", matches);
         model.addAttribute("progression", bracketAssemblyService.getProgressionMap());
+        model.addAttribute("allPicks", deadlinePassed ? allUsersPicks() : List.of());
         return "bracket";
+    }
+
+    private List<UserBracketDto> allUsersPicks() {
+        return bracketPickRepository.findAllWithUserAndWinner().stream()
+            .collect(Collectors.groupingBy(p -> p.getUser().getDisplayName()))
+            .entrySet().stream()
+            .map(e -> new UserBracketDto(e.getKey(), e.getValue().stream()
+                .collect(Collectors.toMap(
+                    p -> p.getMatch().getMatchNumber(),
+                    p -> new OtherPickDto(
+                        p.getPredictedWinner() != null ? p.getPredictedWinner().getName() : null,
+                        p.getPointsEarned())))))
+            .sorted(Comparator.comparing(UserBracketDto::displayName))
+            .toList();
     }
 
     @PostMapping("/save-all")

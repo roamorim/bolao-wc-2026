@@ -7,7 +7,7 @@
 <div th:replace="~{fragments/layout :: alerts}"></div>
 
 <div class="container py-4" style="padding-bottom:90px"
-     x-data="bracketApp(_matches, _progression, _csrfToken, _csrfHeader)">
+     x-data="bracketApp(_matches, _progression, _csrfToken, _csrfHeader, _allPicks)">
 
     <!-- Bracket not ready: maintenance page -->
     <div th:unless="${bracketReady}" class="d-flex flex-column align-items-center justify-content-center text-center py-5 my-4">
@@ -113,6 +113,33 @@
                                  class="text-center text-muted small fst-italic">
                                 Escolha primeiro o(s) jogo(s) anterior(es)
                             </div>
+
+                            <!-- Palpites de todos (só depois do prazo) -->
+                            <div x-show="allPicks.length > 0" class="mt-2 pt-2 border-top">
+                                <button type="button" class="btn btn-sm btn-outline-secondary w-100"
+                                        @click="toggleExpanded(m.number)">
+                                    <i class="bi bi-people me-1"></i>
+                                    <span x-text="expanded[m.number] ? 'Ocultar palpites' : 'Ver quem apostou (' + picksFor(m.number).length + ')'"></span>
+                                </button>
+                                <div x-show="expanded[m.number]" class="table-responsive mt-2">
+                                    <table class="table table-sm align-middle mb-0" style="font-size:.8rem">
+                                        <tbody>
+                                            <template x-for="p in picksFor(m.number)" :key="p.displayName">
+                                                <tr>
+                                                    <td x-text="p.displayName"></td>
+                                                    <td class="text-center fw-semibold" x-text="p.teamName ?? '—'"></td>
+                                                    <td class="text-center">
+                                                        <span x-show="p.pointsEarned !== null" class="badge"
+                                                              :class="p.pointsEarned > 0 ? 'bg-success' : 'bg-light text-dark border'"
+                                                              x-text="p.pointsEarned + 'pts'"></span>
+                                                        <span x-show="p.pointsEarned === null" class="text-muted">—</span>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="card-footer py-1 text-muted small" x-text="formatDate(m.matchDatetimeMs) + ' UTC'"></div>
@@ -151,15 +178,18 @@
     const _progression = /*[[${progression}]]*/ {};
     const _csrfToken = /*[[${_csrf.token}]]*/ '';
     const _csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+    const _allPicks = /*[[${allPicks}]]*/ [];
 
     const STAGE_ORDER = ['R32', 'R16', 'QF', 'SEMI', 'SF', 'FINAL'];
 
-    function bracketApp(matches, progression, csrfToken, csrfHeader) {
+    function bracketApp(matches, progression, csrfToken, csrfHeader, allPicks) {
         return {
             matches: matches,
             progression: progression,
             csrfToken: csrfToken,
             csrfHeader: csrfHeader,
+            allPicks: allPicks,
+            expanded: {},
             picks: {},
             saving: false,
             deadlinePassed: false,
@@ -267,6 +297,20 @@
 
             missingCount() {
                 return this.totalCount() - this.pickedCount();
+            },
+
+            toggleExpanded(number) {
+                this.expanded[number] = !this.expanded[number];
+            },
+
+            picksFor(number) {
+                return this.allPicks
+                    .filter(u => u.picks[number] !== undefined)
+                    .map(u => ({
+                        displayName: u.displayName,
+                        teamName: u.picks[number].teamName,
+                        pointsEarned: u.picks[number].pointsEarned
+                    }));
             },
 
             formatDate(ms) {
