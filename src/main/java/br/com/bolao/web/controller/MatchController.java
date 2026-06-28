@@ -50,7 +50,9 @@ public class MatchController {
     @GetMapping
     public String matchList(@AuthenticationPrincipal UserDetails principal, Model model) {
         var user = userService.findByUsername(principal.getUsername());
-        List<Match> matches = matchRepository.findAllWithTeamsOrderByDatetime();
+        List<Match> matches = matchRepository.findAllWithTeamsOrderByDatetime().stream()
+            .filter(m -> m.getStage().isGroupStage())
+            .toList();
 
         Map<Long, MatchPrediction> predictionsByMatchId = matchPredictionRepository
             .findByUserIdWithMatch(user.getId()).stream()
