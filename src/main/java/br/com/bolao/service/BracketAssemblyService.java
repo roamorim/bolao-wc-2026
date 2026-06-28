@@ -299,12 +299,6 @@ public class BracketAssemblyService {
         Map<Integer, Match> nextByNumber = nextMatches.stream()
             .collect(Collectors.toMap(Match::getMatchNumber, m -> m));
 
-        // find earliest datetime in next stage for deadline
-        var deadlineInstant = nextMatches.stream()
-            .map(Match::getMatchDatetime)
-            .min(java.time.Instant::compareTo)
-            .orElse(null);
-
         for (var entry : PROGRESSION.entrySet()) {
             int targetMatchNum = entry.getKey();
             int[] sources = entry.getValue();
@@ -317,9 +311,6 @@ public class BracketAssemblyService {
 
             target.setHomeTeam(winner(homeSource));
             target.setAwayTeam(winner(awaySource));
-            if (deadlineInstant != null) {
-                target.setPredictionDeadline(deadlineInstant);
-            }
         }
     }
 

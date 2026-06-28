@@ -1,5 +1,6 @@
 package br.com.bolao.service;
 
+import br.com.bolao.domain.enums.MatchStatus;
 import br.com.bolao.domain.model.BracketPick;
 import br.com.bolao.domain.model.Match;
 import br.com.bolao.domain.model.Team;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -198,6 +200,40 @@ class BracketAssemblyServiceTest {
 
         assertThat(projected.get(93).home()).isEqualTo(brazil);
         assertThat(projected.get(93).away()).isEqualTo(norway);
+    }
+
+    @Test
+    void advanceStageIfComplete_setsRealTeams_butNeverTouchesThePredictionDeadline() {
+        // Bug found while investigating the auto-result-fetcher: the bracket-wide
+        // deadline must stay fixed forever once set (everyone picks the whole
+        // bracket before match 73) — advancing a stage must not push it forward
+        // to the next stage's still-stale seeded match_datetime.
+        Team t1 = team(1, "T1");
+        Team t2 = team(2, "T2");
+        Team t3 = team(3, "T3");
+        Team t4 = team(4, "T4");
+        Match m75 = addMatch(75, R32, t1, t2);
+        m75.setStatus(MatchStatus.FINISHED);
+        m75.setHomeScore(2);
+        m75.setAwayScore(0);
+        Match m78 = addMatch(78, R32, t3, t4);
+        m78.setStatus(MatchStatus.FINISHED);
+        m78.setHomeScore(1);
+        m78.setAwayScore(3);
+
+        Match m89 = addMatch(89, R16, null, null);
+        m89.setMatchDatetime(Instant.now().plus(10, ChronoUnit.DAYS)); // stale seeded placeholder
+        Instant fixedDeadline = Instant.parse("2026-06-28T18:30:00Z");
+        m89.setPredictionDeadline(fixedDeadline);
+
+        when(matchRepository.findByStageCodeWithNullableTeams("R32")).thenReturn(List.of(m75, m78));
+        when(matchRepository.findByStageCodeWithNullableTeams("R16")).thenReturn(List.of(m89));
+
+        service.advanceStageIfComplete("R32");
+
+        assertThat(m89.getHomeTeam()).isEqualTo(t1);  // winner of m75
+        assertThat(m89.getAwayTeam()).isEqualTo(t4);  // winner of m78
+        assertThat(m89.getPredictionDeadline()).isEqualTo(fixedDeadline);
     }
 
     @Test
