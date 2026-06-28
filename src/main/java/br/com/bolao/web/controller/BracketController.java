@@ -48,7 +48,7 @@ public class BracketController {
     public record MatchDto(
         int number, Long matchId, String stageCode, String stageName,
         TeamDto homeTeam, TeamDto awayTeam,
-        boolean finished, Integer homeScore, Integer awayScore,
+        boolean finished, Integer homeScore, Integer awayScore, String penaltyWinnerName,
         long matchDatetimeMs, long deadlineMs,
         Long myPickTeamId, Integer pointsEarned
     ) {
@@ -57,6 +57,7 @@ public class BracketController {
                 m.getMatchNumber(), m.getId(), m.getStage().getCode(), m.getStage().getName(),
                 TeamDto.from(m.getHomeTeam()), TeamDto.from(m.getAwayTeam()),
                 m.isFinished(), m.getHomeScore(), m.getAwayScore(),
+                m.getPenaltyWinner() != null ? m.getPenaltyWinner().getName() : null,
                 m.getMatchDatetime().toEpochMilli(), m.getPredictionDeadline().toEpochMilli(),
                 pick != null && pick.getPredictedWinner() != null ? pick.getPredictedWinner().getId() : null,
                 pick != null ? pick.getPointsEarned() : null

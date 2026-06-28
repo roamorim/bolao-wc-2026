@@ -359,11 +359,16 @@ public class BracketAssemblyService {
     }
 
     private Team winner(Match match) {
+        if (match.getPenaltyWinner() != null) return match.getPenaltyWinner();
         if (match.getHomeScore() == null || match.getAwayScore() == null) return null;
         return match.getHomeScore() > match.getAwayScore() ? match.getHomeTeam() : match.getAwayTeam();
     }
 
     private Team loser(Match match) {
+        if (match.getPenaltyWinner() != null) {
+            return match.getPenaltyWinner().getId().equals(match.getHomeTeam().getId())
+                ? match.getAwayTeam() : match.getHomeTeam();
+        }
         if (match.getHomeScore() == null || match.getAwayScore() == null) return null;
         return match.getHomeScore() > match.getAwayScore() ? match.getAwayTeam() : match.getHomeTeam();
     }

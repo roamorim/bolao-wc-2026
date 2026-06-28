@@ -91,8 +91,9 @@ public class ScoringService {
 
     @Transactional
     public void calculateBracketPicks(Match match) {
-        Team winner = match.getHomeScore() > match.getAwayScore()
-            ? match.getHomeTeam() : match.getAwayTeam();
+        Team winner = match.getPenaltyWinner() != null
+            ? match.getPenaltyWinner()
+            : (match.getHomeScore() > match.getAwayScore() ? match.getHomeTeam() : match.getAwayTeam());
         int pts = loadConfig().get(ScoringKey.BRACKET_CORRECT_PICK);
         bracketPickRepository.findByMatchId(match.getId()).forEach(p ->
             p.setPointsEarned(p.getPredictedWinner() != null

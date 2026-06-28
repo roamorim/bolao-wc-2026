@@ -1,15 +1,24 @@
 package br.com.bolao.service;
 
 import br.com.bolao.domain.enums.ScoringKey;
+import br.com.bolao.domain.model.BracketPick;
+import br.com.bolao.domain.model.Match;
+import br.com.bolao.domain.model.ScoringConfig;
+import br.com.bolao.domain.model.Team;
+import br.com.bolao.domain.model.TournamentStage;
+import br.com.bolao.domain.repository.BracketPickRepository;
+import br.com.bolao.domain.repository.ScoringConfigRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ScoringServiceTest {
 
@@ -92,6 +101,46 @@ class ScoringServiceTest {
         assertThat(scoringService.computeMatchPoints(2, 1, 2, 1, true, knockoutConfig)).isEqualTo(0);
         assertThat(scoringService.computeMatchPoints(3, 1, 1, 0, true, knockoutConfig)).isEqualTo(0);
         assertThat(scoringService.computeMatchPoints(1, 1, 1, 1, true, knockoutConfig)).isEqualTo(0);
+    }
+
+    @Test
+    void calculateBracketPicks_usesPenaltyWinner_whenScoreIsTied() {
+        ScoringConfigRepository scoringConfigRepository = mock(ScoringConfigRepository.class);
+        BracketPickRepository bracketPickRepository = mock(BracketPickRepository.class);
+        ScoringService service = new ScoringService(scoringConfigRepository, mock(), mock(), mock(), bracketPickRepository);
+
+        ScoringConfig bracketConfig = new ScoringConfig();
+        bracketConfig.setConfigKey("BRACKET_CORRECT_PICK");
+        bracketConfig.setPoints(5);
+        when(scoringConfigRepository.findAll()).thenReturn(List.of(bracketConfig));
+
+        Team home = new Team();
+        home.setId(1L);
+        home.setName("Home");
+        Team away = new Team();
+        away.setId(2L);
+        away.setName("Away");
+
+        Match match = new Match();
+        match.setId(99L);
+        match.setStage(new TournamentStage());
+        match.setHomeTeam(home);
+        match.setAwayTeam(away);
+        match.setHomeScore(1);
+        match.setAwayScore(1); // tied at full time — decided on penalties
+        match.setPenaltyWinner(away);
+
+        BracketPick pickedHome = new BracketPick();
+        pickedHome.setPredictedWinner(home); // guessed wrong: home doesn't actually win on penalties
+        BracketPick pickedAway = new BracketPick();
+        pickedAway.setPredictedWinner(away); // guessed right
+
+        when(bracketPickRepository.findByMatchId(99L)).thenReturn(List.of(pickedHome, pickedAway));
+
+        service.calculateBracketPicks(match);
+
+        assertThat(pickedHome.getPointsEarned()).isEqualTo(0);
+        assertThat(pickedAway.getPointsEarned()).isEqualTo(5);
     }
 
     // ── Casos parametrizados ─────────────────────────────────────────────────

@@ -73,7 +73,9 @@ public class FootballDataClient {
 
     public record FdTeam(String tla) {}
 
-    public record FdScore(FdFullTime fullTime) {}
+    // winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" — already accounts for extra time/penalties,
+    // so it's used instead of comparing fullTime when the match needed a shootout to decide.
+    public record FdScore(FdFullTime fullTime, String winner) {}
 
     public record FdFullTime(Integer home, Integer away) {}
 }

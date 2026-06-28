@@ -97,8 +97,23 @@ public class MatchResultFetcherScheduler {
         int home = flipped ? api.score().fullTime().away() : api.score().fullTime().home();
         int away = flipped ? api.score().fullTime().home() : api.score().fullTime().away();
 
+        Long penaltyWinnerTeamId = null;
+        if (home == away && !match.getStage().isGroupStage()) {
+            String winnerSide = api.score().winner();
+            boolean apiHomeWon = "HOME_TEAM".equals(winnerSide);
+            boolean apiAwayWon = "AWAY_TEAM".equals(winnerSide);
+            if (apiHomeWon || apiAwayWon) {
+                boolean ourHomeWon = flipped ? apiAwayWon : apiHomeWon;
+                penaltyWinnerTeamId = ourHomeWon ? match.getHomeTeam().getId() : match.getAwayTeam().getId();
+            } else {
+                log.warn("Jogo #{} terminou empatado mas a API não informou o vencedor dos pênaltis — só o admin pode completar manualmente.",
+                        match.getMatchNumber());
+                return;
+            }
+        }
+
         try {
-            tournamentAdminService.submitMatchResult(match.getId(), new MatchResultRequest(home, away));
+            tournamentAdminService.submitMatchResult(match.getId(), new MatchResultRequest(home, away, penaltyWinnerTeamId));
             log.info("Auto-applied result for match #{}: {} {} x {} {}",
                     match.getMatchNumber(),
                     match.getHomeTeam().getCode(), home,

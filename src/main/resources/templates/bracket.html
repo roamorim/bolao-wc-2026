@@ -65,9 +65,12 @@
                                           style="font-size:1.5rem"></span>
                                     <div class="fw-semibold small mt-1" x-text="projected(m.number).home ? projected(m.number).home.name : 'A definir'"></div>
                                 </div>
-                                <div class="text-muted fw-bold px-2">
+                                <div class="text-muted fw-bold px-2 text-center">
                                     <span x-show="m.finished" x-text="m.homeScore + ' × ' + m.awayScore" class="fs-5"></span>
                                     <span x-show="!m.finished" class="text-muted">×</span>
+                                    <div x-show="m.finished && m.penaltyWinnerName" class="small fw-normal text-muted" style="font-size:.7rem">
+                                        pênaltis: <span x-text="m.penaltyWinnerName"></span>
+                                    </div>
                                 </div>
                                 <div class="text-center" style="flex:1">
                                     <span class="fi" :class="'fi-' + (projected(m.number).away ? projected(m.number).away.flagCode : '')"

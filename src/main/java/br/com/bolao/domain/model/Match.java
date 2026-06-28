@@ -47,6 +47,10 @@ public class Match {
     @Column(name = "away_score")
     private Integer awayScore;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "penalty_winner_team_id")
+    private Team penaltyWinner;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MatchStatus status = MatchStatus.SCHEDULED;

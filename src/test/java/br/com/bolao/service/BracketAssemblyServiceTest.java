@@ -237,6 +237,36 @@ class BracketAssemblyServiceTest {
     }
 
     @Test
+    void advanceStageIfComplete_usesPenaltyWinner_whenMatchEndedTied() {
+        Team t1 = team(1, "T1");
+        Team t2 = team(2, "T2");
+        Team t3 = team(3, "T3");
+        Team t4 = team(4, "T4");
+        Match m75 = addMatch(75, R32, t1, t2);
+        m75.setStatus(MatchStatus.FINISHED);
+        m75.setHomeScore(1);
+        m75.setAwayScore(1);
+        // Tied at full time: home team (t1) actually won the shootout. The naive
+        // "homeScore > awayScore" comparison would wrongly default to the away
+        // team (t2) on a tie — penaltyWinner must override that.
+        m75.setPenaltyWinner(t1);
+        Match m78 = addMatch(78, R32, t3, t4);
+        m78.setStatus(MatchStatus.FINISHED);
+        m78.setHomeScore(2);
+        m78.setAwayScore(0);
+
+        Match m89 = addMatch(89, R16, null, null);
+
+        when(matchRepository.findByStageCodeWithNullableTeams("R32")).thenReturn(List.of(m75, m78));
+        when(matchRepository.findByStageCodeWithNullableTeams("R16")).thenReturn(List.of(m89));
+
+        service.advanceStageIfComplete("R32");
+
+        assertThat(m89.getHomeTeam()).isEqualTo(t1); // penalty winner of m75, not "away wins on tie" default
+        assertThat(m89.getAwayTeam()).isEqualTo(t3);
+    }
+
+    @Test
     void thirdPlaceMatch_projectsTheLosersOfBothSemifinalPicks() {
         Team t1 = team(1, "T1");
         Team t2 = team(2, "T2");

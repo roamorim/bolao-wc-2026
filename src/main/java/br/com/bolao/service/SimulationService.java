@@ -209,7 +209,7 @@ public class SimulationService {
 
         for (Match match : toAdvance) {
             tournamentAdminService.submitMatchResult(
-                match.getId(), new MatchResultRequest(randomScore(), randomScore()));
+                match.getId(), new MatchResultRequest(randomScore(), randomScore(), null));
         }
         return toAdvance.size();
     }
@@ -252,7 +252,7 @@ public class SimulationService {
             // Knockout scores must not be draws
             int[] score = randomKnockoutScore();
             tournamentAdminService.submitMatchResult(
-                match.getId(), new MatchResultRequest(score[0], score[1]));
+                match.getId(), new MatchResultRequest(score[0], score[1], null));
             advanced++;
         }
 
