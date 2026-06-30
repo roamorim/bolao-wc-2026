@@ -87,26 +87,50 @@ public class MatchResultFetcherScheduler {
     }
 
     private void applyResult(Match match, FdMatch api, boolean flipped) {
-        if (api.score() == null || api.score().fullTime() == null
-                || api.score().fullTime().home() == null || api.score().fullTime().away() == null) {
-            log.warn("Match #{} reported FINISHED but score is incomplete in API response", match.getMatchNumber());
+        var score = api.score();
+        if (score == null) {
+            log.warn("Match #{} reported FINISHED but score object is null in API response", match.getMatchNumber());
             return;
         }
 
-        // When home/away is inverted in the API, swap the scores to match our DB assignment
-        int home = flipped ? api.score().fullTime().away() : api.score().fullTime().home();
-        int away = flipped ? api.score().fullTime().home() : api.score().fullTime().away();
+        // Use regularTime as the field score base — in PENALTY_SHOOTOUT, fullTime includes
+        // converted penalty goals and is NOT a field score. Fall back to fullTime only when
+        // regularTime is absent (typical for REGULAR-duration matches in this API).
+        var base = (score.regularTime() != null
+                && score.regularTime().home() != null
+                && score.regularTime().away() != null)
+                ? score.regularTime()
+                : score.fullTime();
+
+        if (base == null || base.home() == null || base.away() == null) {
+            log.warn("Match #{}: score incompleto na API", match.getMatchNumber());
+            return;
+        }
+
+        // extraTime carries only the additional goals scored in ET (not cumulative).
+        int etHome = 0, etAway = 0;
+        if (score.extraTime() != null
+                && score.extraTime().home() != null
+                && score.extraTime().away() != null) {
+            etHome = score.extraTime().home();
+            etAway = score.extraTime().away();
+        }
+
+        int rawHome = base.home() + etHome;
+        int rawAway = base.away() + etAway;
+        int home = flipped ? rawAway : rawHome;
+        int away = flipped ? rawHome : rawAway;
 
         Long penaltyWinnerTeamId = null;
         if (home == away && !match.getStage().isGroupStage()) {
-            String winnerSide = api.score().winner();
+            String winnerSide = score.winner();
             boolean apiHomeWon = "HOME_TEAM".equals(winnerSide);
             boolean apiAwayWon = "AWAY_TEAM".equals(winnerSide);
             if (apiHomeWon || apiAwayWon) {
                 boolean ourHomeWon = flipped ? apiAwayWon : apiHomeWon;
                 penaltyWinnerTeamId = ourHomeWon ? match.getHomeTeam().getId() : match.getAwayTeam().getId();
             } else {
-                log.warn("Jogo #{} terminou empatado mas a API não informou o vencedor dos pênaltis — só o admin pode completar manualmente.",
+                log.warn("Match #{}: empatado mas winner não disponível na API — aguardando admin.",
                         match.getMatchNumber());
                 return;
             }

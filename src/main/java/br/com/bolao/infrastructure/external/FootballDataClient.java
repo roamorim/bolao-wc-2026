@@ -73,9 +73,16 @@ public class FootballDataClient {
 
     public record FdTeam(String tla) {}
 
-    // winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" — already accounts for extra time/penalties,
-    // so it's used instead of comparing fullTime when the match needed a shootout to decide.
-    public record FdScore(FdFullTime fullTime, String winner) {}
+    // fullTime = regularTime + ET + converted penalty goals (NOT a field score);
+    // regularTime = actual 90-min field score; extraTime = additional ET goals only;
+    // winner = "HOME_TEAM" | "AWAY_TEAM" | null (unreliable for some WC 2026 matches).
+    public record FdScore(
+            String duration,         // "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT"
+            FdFullTime fullTime,     // regularTime + ET + penalties converted — do not use for field score
+            FdFullTime regularTime,  // actual 90-min field score
+            FdFullTime extraTime,    // additional goals scored in ET (not cumulative)
+            String winner            // "HOME_TEAM" | "AWAY_TEAM" | null
+    ) {}
 
     public record FdFullTime(Integer home, Integer away) {}
 }
