@@ -1,6 +1,7 @@
 package br.com.bolao.web.controller;
 
 import br.com.bolao.service.LeaderboardService;
+import br.com.bolao.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,26 +34,33 @@ public class LeaderboardController {
     );
 
     private final LeaderboardService leaderboardService;
+    private final UserService userService;
 
     @Value("${bolao.fingerprint.enabled:false}")
     private boolean fingerprintEnabled;
 
-    public LeaderboardController(LeaderboardService leaderboardService) {
+    public LeaderboardController(LeaderboardService leaderboardService, UserService userService) {
         this.leaderboardService = leaderboardService;
+        this.userService = userService;
     }
 
     @GetMapping
     public String leaderboard(Model model, @AuthenticationPrincipal UserDetails principal) {
-        model.addAttribute("entries", leaderboardService.getLeaderboard());
+        model.addAttribute("entries", leaderboardService.getLeaderboard(currentUserId(principal)));
         model.addAttribute("fpRowColors", computeFpRowColors(principal));
         return "leaderboard";
     }
 
     @GetMapping("/fragment")
     public String leaderboardFragment(Model model, @AuthenticationPrincipal UserDetails principal) {
-        model.addAttribute("entries", leaderboardService.getLeaderboard());
+        model.addAttribute("entries", leaderboardService.getLeaderboard(currentUserId(principal)));
         model.addAttribute("fpRowColors", computeFpRowColors(principal));
         return "fragments/leaderboard-table :: leaderboardTable";
+    }
+
+    private Long currentUserId(UserDetails principal) {
+        if (principal == null) return null;
+        return userService.findByUsername(principal.getUsername()).getId();
     }
 
     private String[] computeFpRowColors(UserDetails principal) {

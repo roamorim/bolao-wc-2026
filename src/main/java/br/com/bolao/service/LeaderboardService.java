@@ -3,6 +3,7 @@ package br.com.bolao.service;
 import br.com.bolao.domain.model.*;
 import br.com.bolao.domain.repository.*;
 import br.com.bolao.web.dto.response.LeaderboardEntryResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,12 @@ public class LeaderboardService {
     private final TopScorerPredictionRepository topScorerPredictionRepository;
     private final BracketPickRepository bracketPickRepository;
 
+    @Value("${bolao.ranking.self-alias.enabled:false}")
+    private boolean selfAliasEnabled;
+
+    @Value("${bolao.ranking.self-alias.name:Rato}")
+    private String selfAliasName;
+
     public LeaderboardService(
             UserRepository userRepository,
             MatchPredictionRepository matchPredictionRepository,
@@ -32,15 +39,31 @@ public class LeaderboardService {
     }
 
     @Transactional(readOnly = true)
-    public List<LeaderboardEntryResponse> getLeaderboard() {
+    public List<LeaderboardEntryResponse> getLeaderboard(Long viewerUserId) {
         List<User> users = userRepository.findAll().stream()
             .filter(u -> u.isActive() && u.getRole().name().equals("USER"))
             .toList();
 
         return users.stream()
             .map(this::toEntry)
+            .map(entry -> applySelfAlias(entry, viewerUserId))
             .sorted(Comparator.comparingInt(LeaderboardEntryResponse::totalPoints).reversed())
             .toList();
+    }
+
+    private LeaderboardEntryResponse applySelfAlias(LeaderboardEntryResponse entry, Long viewerUserId) {
+        if (!selfAliasEnabled || viewerUserId == null || !entry.userId().equals(viewerUserId)) {
+            return entry;
+        }
+        return new LeaderboardEntryResponse(
+            entry.userId(),
+            selfAliasName,
+            entry.totalPoints(),
+            entry.matchPoints(),
+            entry.groupPoints(),
+            entry.topScorerPoints(),
+            entry.bracketPoints()
+        );
     }
 
     private LeaderboardEntryResponse toEntry(User user) {

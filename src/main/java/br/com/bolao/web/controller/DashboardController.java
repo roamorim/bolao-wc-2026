@@ -45,7 +45,7 @@ public class DashboardController {
         var user = userService.findByUsername(principal.getUsername());
 
         var predictions = matchPredictionRepository.findByUserIdWithMatch(user.getId());
-        var leaderboard = leaderboardService.getLeaderboard();
+        var leaderboard = leaderboardService.getLeaderboard(user.getId());
         boolean bracketReady = bracketAssemblyService.isR32Complete();
         var knockoutMatches = matchRepository.findAllKnockoutMatchesWithStage();
         int totalBracketMatches = knockoutMatches.size();
