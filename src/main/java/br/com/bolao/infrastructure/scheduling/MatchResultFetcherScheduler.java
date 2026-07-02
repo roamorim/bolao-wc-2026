@@ -118,6 +118,23 @@ public class MatchResultFetcherScheduler {
 
         int rawHome = base.home() + etHome;
         int rawAway = base.away() + etAway;
+
+        // Sanity check: outside PENALTY_SHOOTOUT, fullTime is an independent field that
+        // must agree with regularTime+extraTime. A mismatch means the provider hasn't
+        // finished reconciling its live data yet (seen in practice: regularTime/extraTime
+        // briefly inconsistent right as a match ends, self-corrected hours later). Skip and
+        // let the next poll retry rather than locking in a possibly-wrong score.
+        if (!"PENALTY_SHOOTOUT".equals(score.duration())
+                && score.fullTime() != null
+                && score.fullTime().home() != null
+                && score.fullTime().away() != null
+                && (score.fullTime().home() != rawHome || score.fullTime().away() != rawAway)) {
+            log.warn("Match #{}: regularTime+extraTime ({} x {}) não bate com fullTime ({} x {}) — "
+                    + "dados da API ainda não reconciliados, tentando de novo no próximo ciclo",
+                    match.getMatchNumber(), rawHome, rawAway, score.fullTime().home(), score.fullTime().away());
+            return;
+        }
+
         int home = flipped ? rawAway : rawHome;
         int away = flipped ? rawHome : rawAway;
 
